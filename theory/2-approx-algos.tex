@@ -1,0 +1,40 @@
+\section{Algoritmi di Approssimazione}
+\subsection{Fattore di Approssimazione}
+Def. Fattore di di approssimazione $\alpha \geq 1$.
+$\forall \text{istanza del problema} \frac{cost_approx(I)}{cost_opt(I)} \leq \alpha$
+
+I.e., la soluzione approssimata ricade nella finestra delimitata dal costo approssimato e alpha volte il costo approssimato.
+Abbiamo così determinato un upper bound al costo della soluzione approssimata.
+
+\subsection{Algoritmo di Christofides per TSP}
+Esiste un risultato secondo cui il fattore di approssimazione per un algoritmo di approssimazione di TSP non è costante,
+ammesso che $P \neq NP$. Un fattore di approssimazione variabile, dipendente dal numero di veritici, è sostanzialmente inutile.
+Questo è vero per istanze generiche del problema; ammettendo una restrizione del problema originale
+possiamo trovare algoritmi con fattori di approssimazione costanti.
+
+Algoritmo di Christofides per TSP con proprietà triangolare sulla funzione di costo.
+Secondo la proprità triangolare: $l_1 + l_2 \geq l_3$. Applicata ai costi ci indica che è più conveniente passare per $l_3$.
+
+Ripassa: Prim e Kruskals
+
+1. Costruisco T* minimum spanning tree sul grafo originale con Kruskal o Prim.
+2. Considero i nodi di T* di grado dispari (numero dispari di archi connessi al nodo). Cerco il \textit{perfect matching} di costo minimo M* **nota
+3. Cerco il ciclo euleriano E su $T* \cup M*$
+4. Da E costruisco il ciclo hamiltoniano H partendo da E ed eliminando tutti i nodi visitati già visitati
+
+
+**nota
+Dato un grafo G = (V, E), il matching $M \in E$ è l'insieme di archi che coprono tutti i vertici del grafo, in modo tale che ogni coppia
+di archi non condivida nessun nodo.
+Prendiamo il perfect matching di costo minimo $M* \in E$.
+
+Problemi:
+1. Al passo 2, non sempre esiste un cammino euleriano su un grafo. Necessitiamo di tutti i nodi di grado pari.
+Assicurato per costruzione: ad ogni nodo di grado dispari abbiamo aggiunto un nodo, rendendolo di grado pari.
+2. Il matching al passo 2 richiede un numero di nodi pari, altrimenti uno rimane fuori. **assocurato
+
+**Assicurato
+Somma dei gradi dei nodi di un grafo: S = 2 |E|. Ogni arco incide su due nodi.
+La somma dei nodi di grado pari P è pari, dato che rimane un fattore due.
+La somma dei nodi di grado dispari continua ad essere pari: D = S - P, posso raccogliere un due.
+Siccome i numeri che compongono la somma sono dispari, il loro numero deve essere pari.
