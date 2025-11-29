@@ -91,14 +91,14 @@ Come? una soluzione del TSP ci consente di risolvere un altro problema NP-comple
 
 Input:
 G = (V, E) non diretto e completo
-funzione di costo c: E -> R che mappa ogni arco ad un costo reale
+funzione di costo c: E -> R+ che mappa ogni arco ad un costo reale
 
 Ouput: ciclo hamiltoniano (ciclo che attraversi tutti i nodi tornando all'origine) di costo minimo
 
 Scegliamo un problema NP completo tale per cui esiste una conversione di costo polinomiale ad un'istanza di TSP,
 trasformando poi l'output di TSP (il ciclo hamiltoniano) in una risposta decisionale del problema originale (Y/N).
 
---istanza problema NP-completo --> | conversione polinomiale | -> | algo TSP | -> | conversione output | -> Y/N
+--istanza problema NP-completo --> | conversione polinomiale | -> | algo TSP | -> | conversione polinomiale | -> Y/N
 
 ISTANZA
 Scegliamo come problema di input l'esistenza di un \textit{ciclo hamiltoniano (HC)}:

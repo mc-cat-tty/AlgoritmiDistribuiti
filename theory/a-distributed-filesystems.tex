@@ -1,0 +1,123 @@
+\section{Network File System}
+From SUN Microsystems.
+
+See: SunOS and Saparc microcontroller.
+
+Modello client-server. I file risiedono sul server.
+NFS è un protocollo standard, liberamente implementabile.
+
+NFS venne implementato in SunOS nel 1985.
+
+Stateful vs stateless server implementation: risponde alla domanda "dove mantengo lo stato del protocollo?".
+
+application -> NFS client - - - -> NFS server -> Local filesystem.
+
+Client e server comunicano con RPC.
+
+In UNIX, l'acccesso a un FS è estratto da un file system virtuale (VFS):
+\begin{verbatim}
+System call layer -> VFS ---> Local FS                                                                        |---- System call layer
+                          |                                                                                    v
+                          |--> NFS client -> FPC client daemon  - - - - -> RPC server daemon -> NFS server -> VFS -> Local FS
+\end{verbatim}
+
+In UNIX: Soft e hard links
+In Windows: Hard links, Junctions (soft links), Symbolic links
+
+Vedi: open vs create da NFS 3 a NFS 4
+
+Dalla v4 le compound procedures consentono di inviare più call al server. Le call di un compound sono atomiche (e.g., a differenza delle
+transaction dei DB).
+
+Tradizionalmente i server NFS erano stateless: il client teneva traccia dei file aperti e della posizione della testina di lettura del file.
+Il server elimina le informazioni di stato tra le operazioni. Le operazioni devono essere autocontenute.
+I lock sono gestiti dal lock server.
+
+Prendiamo la chiamata read(handle, buffer, n): l'associazione tra handle e filename e il punto di lettura del file sono gestite
+dal local FS.
+
+Il client FS, in caso di server stateless, traduce la chiamata in nfs_read(filename, buffer, pos, n).
+
+Dalla v4, i server NFS sono stateful, ovvero tengono in memoria file aperti, il punto di lettura, ecc.
+Vantaggi: client più semplici, locking sui file gestiti dal server, autenticazione.
+
+Vedi: lockf permette di lockare anche solo una porzione di un file.
+
+Mounting. Uno degli scopi di un remote FS è quello di essere montato su un FS temporaneo.
+Esportare un sottoalbero di un FS significa, per il server, mettere in rete quella porzione dell'albero.
+Il filesystem è trasparente dopo il montaggio; durante il mounting si deve specificare il punto di montaggio.
+
+Sever: share -F nfs root=<users>,rw=<users> -d "<name>" <path>
+Client: mount -t nfs server:/path/on/server /path/on/client
+
+Come avere gli estessi percorsi (stesso spazio dei nomi) su tutti i client?
+I client si devono accordare in modo tale da montare nello stesso punto una cartella esportata da un server.
+TODO diagram
+
+Indirect mounting: il client che vuole montare un sottoalbero remoto che a sua volta contiene un altro sottoalbero remoto,
+deve montare entrambi i sottoalberi.
+
+Automounting semplice: Il mounting di una directory remota automaticamente al boot, e.g. fstab, non sempre è comodo.
+Automounting migliorato: un demone gestisce il montaggio della directory quando essa, o un suo contenuto, viene acceduto.
+
+La policy di unmounting dipende dal tipo di directory. Tipicamente lo smontaggio avviene al logout o dopo un timeout prestabilito.
+
+Sincronizzazione. Gli altri client vedono le modifiche alla chiusura del file.
+NFS v4 gestisce e implementa primitive di locking:
+ - lock locking
+ - lockt lock test
+ - locku unlock
+ - renew rinonva un lock prima che scada TODO: when?
+
+Dal punto di vista della sicurezza, viene usato SecureRPC e una ACL per la gestione dei permessi.
+
+\section{Coda}
+Punta alla disponibilità dei file. Sviluppato da Carnegie Mellon Uni negli anni '90; sviluppato su RPC2.
+Due tipi di nodi: Vice, ovvero i server, e Virtue, tutti gli altri nodi. I nodi Virtue hostano un processo chiamato Venus, che rappresenta il client.
+
+I file sono raggruppati in volumi, simili a partizioni UNIX; i volumi vengono montati dai client e sono identificati da un percorso assoluto
+comune a tutti i client: server e client namespace sono uniformi.
+
+All'apertura di un file il server lo trasferisce al client.
+Se il client apre il file in sola lettura, ottiene uno snapshot del file; altri client potranno accedere il file sia in lettura che in scrittura.
+Se il client apre il file in scrittura, nessun altro client potrà aprirlo, ne in scrittura ne in lettura.
+
+Coda permette l'accesso ai file quando il server è iraggiungibile: il client può accedere ad una copia locale del file anche quando il server è offline.
+
+Approfondimento: Recoverable Virtual Memory
+
+\section{Plan 9}
+Rigidamente client server. Risorse centralizzate sui server.
+\textit{Everything is a file}, come nella filosofia UNIX.
+La comunicazione è basata sul protocollo 9P.
+
+Ogni processo ha un namespace privato e separato dagli altri; a differenza di UNIX, ogni processo ha una vista
+diversa sulla gerarchia di file presenti nel filesystem. È come se \texttt{mount} e \texttt{umount} di directory remote
+funzionassero localmente al processo.
+
+Union directory: una directory remota può essere montata dove esiste già un'altra directory. Viene mostrata l'unione dei due contenuti.
+
+Plan 9 adotta la semantica di Unix.
+Se arrivano più modifiche in contemporanea, viene applicata solamente la prima.
+
+\section{xFS}
+Nessuna centralizzazione. Ogni nodo può avere sia componenti client che componenti server.
+Sviluppato a Berkley all'interno del progetto NOW negli anni '90.
+
+3 tipi di processi:
+ - client
+ - storage server
+ - metadata manager: intermediario che tiene traccia della locazione dei file. Riceve le richieste dal client e permette di recuperare i file.
+
+Il client contatta prima il metadata manager e, sulla base dei metadati recuperati, lo storage server.
+
+Alcuni nodi ospitano il manager, mentre altri si affidano a manager remoti. TODO: diagram.
+
+I manager devono essere sincronizzati. Alla modifica/creazione/distruzione di un file, tutti i manager devono aggiornarsi.
+I manager forniscono vantaggi simili a quelli di RAID: tolleranza ai guasti e velocità di accesso migliorata se i file sono ridondanti su più nodi.
+
+\section{Recap}
+TODO recap
+Coda - availability
+plan 9 - rigidamente client server
+xfs - totalmente distribuito

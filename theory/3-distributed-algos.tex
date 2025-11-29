@@ -1,0 +1,1268 @@
+\section{Algoritmi Distribuiti}
+\subsection{Gli albori}
+Questo campo dell'informatica nasce 'per caso' insieme all'esigenza di costituire cluster di computazione con le risorse disponibili.
+Ad esempio, i computer dei docenti in un dipartimento universitario.
+Le topologie di queste reti sono inizialmente le più svariate, spesso i collegamenti sono disordinati e non pensati.
+
+Def. Ambiente distribuito. Collezione finita di entità che scambiano messaggi per un obiettivo comune.
+
+Gli algoritmi distribuiti sono chiamati anche protocolli... infatti un protocollo è un algoritmo distribuito sul almeno due nodi.
+
+Vogliamo che il protocollo sia corretto, ovvero che risolva il problema richiesto, e che sia efficiente, ovvero che lo faccia con un basso costo.
+
+Obiettivi: sfruttare le risorse a disposizione, tolleranza ai guasti sui singoli nodi, scalabilità (su diversi piani, ad esempio
+aumentando i nodi aumentare la potenza).
+
+I diversi ambienti su cui un algo può girare sono:
+ - sequenziale: single core, single memory
+ - parallelo: multicore, shared memory, small distances
+ - distribuito: many processors, many memories, parallel operations, wide distances among entities.
+
+TODO comparison table
+
+Questi algoritmi devono essere pensati per lavorare con tante tante macchine eterogenee, soggette a ritardi di comunicazione e guasti.
+A differenza degli algoritmi paralleli, non si usano strategie di divisione del problema in sottoproblemi, gli algo distributi scambiano
+costantemetne messaggi e sono collaborativi.
+
+Le entità dell'ambiente distribuito sono gli elementi che eseguono la computazione. Queste entità hanno una certa autonomia, a livello di
+clock e memoria, per esempio, ed interagiscono tra loro scambiandosi messaggi.
+
+Lo stato di una entità x, indicato con status(x), registra lo stato di x in ogni momento. Lo stato può appartenere ad un insieme
+finito di stati. Lo stato deve essere sempre definito.
+
+Le entità sono reattive: reagiscono agli eventi con un comportamento. Se non accade nulla, non viene fatto niente.
+Esempi di eventi sono messaggi e tick del clock.
+
+Il comportamento (behaviour) B(x) di una entità x è l'insieme di regole di una entità x che associano ad ogni stato e ogni evento un'azione.
+B deve essere deterministico e completo.
+
+Il comportamento del sistema è B(E) = {B(x) | x \in E}, con E set di entità.
+Il comportamento deve essere simmetrico, ovvero ogni enità deve rispettare lo stesso set di regole.
+
+Ogni entità riceve messagi solamente dai suoi in-neighbors e manda messaggi solamente ai suoi out-neighbors.
+
+La comunicazione tra le entità può essere unidirezionale o bidirezionale.
+La topologia della rete può essere modellata con un grafo.
+Un grafo diretto modella una comunicazione unidirezionale, mentre un grafo adiretto modella la bidirezionalità.
+
+Assiomi.
+
+Def. Orientamento locale. Ogni nodo è in grado di disambiguare tra i messaggi che riceve da i suoi vicini.
+Distingue chi gli ha mandato un messaggio e può scegliere a chi mandarlo.
+
+Le restrizioni sono proprietà aggiuntive che limitano l'applicazione di un protocollo.
+E.g., direzionalità dei link, comunicazione FIFO o unordered, edge and entity failures
+(failure detection, limiti di tolleranza, come continuare dopo un fault, ecc.).
+
+Reliability restrictions:
+- total reliability: tutto funziona sempre e per sempre
+- partial reliability: possono esserci stati fallimenti in passato, ma non ce ne saranno in futuro
+- guaranteed delivery: ogni messaggio viene sicuramente consegnato, ma non ho garanzie sulle entità
+
+Altre restrizioni tipiche sono:
+ - connettività: eg., grafo strongly connected
+ - grado di conoscenza della rete: conoscenza sul numero di link, nodi e diametro della rete
+ - delay di comunicazione: bounded se ci sono garanzie sul tempo di ricezione, unbounded altrimenti
+ - delay unitario: delay costante anche in caso di failure
+ - sincronicità dei clock: tutti i clock sono sincronizzati
+
+Complessità per gli algo distribuiti.s
+In questi algoritmi il tempo è molto importante, mentre lo spazio su ogni nodo è poco interessante.
+Molto più interessante considerare la quantità di messaggi scambiati.
+
+A volte conteremo il numero di messaggi scambiati, a volte il numero di bit.
+
+Tempo.
+Come contare la complessità temporale di questi algoritimi?
+Idealmente: le unità di tempo che servono per ricevere il risultato, se il sincronismo tra le entità fosse totale.
+In questo caso si parla di ideal time complexity.
+Problema: il delay di comunicazione non è predicibile.
+Soluzione: usiamo il numero di messaggi scambiati come misura di costo temporale. Consideriamo la catena di messaggi più lunga.
+Questa funzione di costo tiene in considerazione l'asincronismo tra i clock delle entità. Viene chiamata casual time complexity.
+
+Stiamo completamente ignorando il tempo necessario ai nodi per l'elaborazione. Tempo trascurabile rispetto al tempo di comunicazione.
+
+Il tempo è misurato dall'esterno come periodo tra l'inizio della computazione alla fine della stessa.
+
+
+Esempio. Broadcast: flooding protocol.
+Un nodo vuole trasmettere a tutti gli altri un'informazione I.
+Restrizioni:
+ - unique initiator: per definizione del problema
+ - G connesso: per definizione, altrimenti alcuni nodi resterebbero escluisi
+ - Bidirectional links
+ - Total reliability
+
+\begin{verbatim}
+S = {INITIATOR, SLEEPING, DONE}
+
+INITIATOR
+spontaneously
+  send(I) to N(x)
+  become(DONE)  # Transitiamo allo stato DONE
+receiving(I)
+  nil
+  # In futuro ometteremo le azioni nil, se non specificate si evitano
+  
+SLEEPING
+receiving(I)
+  send(I) to N(x) - {sender}  # Sender è il nodo da cui ho ricevuto il messaggio
+  become(DONE)  # Transitiamo allo stato DONE
+\end{verbatim}
+
+Oss. 1: lo stato DONE costituisce una terminazione locale, non esiste una terminazione globale.
+Oss. 2: nessuna entità conosce quando l'intero processo termina (termination detection problem).
+
+Terminazione? assicurata dalle restrizioni di connessione totale e affidabilità totale. Non abbiamo vincoli di direzionalità.
+In un grafo totalmente connesso troveremo sempre un cammino dall'inizializzatore ad ogni altro nodo.
+
+Costo del flooding.
+Convenzione. n numero di nodi. m numero di link.
+
+Tip. Per calcolare il costo temporale cerca relazioni tra quello che vuoi contare e quantità già note.
+Da tenere in considerazione sono il numero di messaggi per arco, il numero 
+
+Costo? su ogni arco incidono due nodi, ogni nodo trasmette I una sola volta; l'arco vede al massimo 2 messaggi.
+\leq 2 messaggi per link. total num of messages <= 2m \in O(m).
+
+TODO
+
+Con l'ottimizzazione (non reinviare I a chi ce l'ha mandato) diventa: |N(s)| + sum_{x \neq s} (|N(x)|-1) = sum_{x} |N(x)| - sum_{x \neq s} 1 = 2m - (n-1).
+
+Def. Distanza d(a, b). Numero minimo di archi tra tutti i percorsi tra a e b.
+Def. Raggio o Eccentricità r(a). Massima distanza di un nodo a da tutti gli altri.
+Def. Diametro di un grafo D(G). Massima eccentricità tra tutti i nodi di G.
+
+Ideal time. In ogni istance ogni vicino riceve un messaggio.
+
+r(initiator) = max_y{d(initiator, y)} \forall y \in E
+Nel caso generale non conosciamo quale sia l'iniziatore. Il caso peggiore è il peggiore iniziatore per ogni possibile esecuzione.
+Max_{(x, y)}{d(x, y)} = Max{r(x)} = D(G) for any pair (x, y) \in E x E
+
+num of time units <= D(G) <= n-1 \in O(n) TODO riscrivi le time units con Time(Flooding(G)
+Res. Il caso peggiore è quelo in cui il grafo è una catena (nodi srotolati e messi in fila).
+
+In caso di casual time complexity il costo peggiore rimane n-1.
+Anche se un grafo non è una catena, la propagazione dei messaggi sugli altri cammini potrebbe essere così lenta che la propagazione più
+veloce è quella lungo il diametro.
+
+Lower bound.
+Si possono usare meno di n-1 time units? no, altrimenti salteremmo qualche nodo sul diametro del grafo.
+
+Però\dots possiamo fare meglio in termini di numero di messaggi?
+Intuzione. Dalla formulazione del problema, ogni entità deve conoscere I. Escluso l'inizializzatore rimangono n-1 entry che non conoscono I.
+Almeno n-1 messaggi devono essere mandati.
+Message(Broadcast(G)) >= n-1 \in \Omega(n)
+
+Considerazione. Ogni messaggio deve passare almeno una volta su ogni arco, altrimenti alcune porzioni del grafo non potrebbero
+ricevere I. Richiedere se l'altro nodo non ha il messaggio farebbe comunque spendere più di un messaggio per arco.
+
+Possiamo migliorare il LB per il problema: Message(Brodadcast(G)) >= m \in \Omega(m)
+
+Ricorda. Stiamo cercando di chiudere il gap tra LB del PROBLEMA e LB dell'ALGORITMO di flooding.
+Message(Broadcast(G)) >= m
+Message(Flooding(G)) = 2m - n + 1 (dalla scorsa lezione)
+Message(Flooding(G)) >= Messsage(Broadcast(G))
+
+Possiamo fare di meglio? Il gap che cerchiamo di chiudere è "grande": 2m - n + 1 - m = m - n + 1
+
+Restrizioni.
+Se applichiamo restrizioni al problema, si può fare di meglio.
+
+Restrizione 1. Albero.
+Assumendo G è un albero T. m = n-1 (ogni nodo ha un arco padre a parte la radice).
+
+Message(Flooding(T)) = 2m - n - 1 = 2(n-1) - n - 1 = n - 1 = m
+
+Gli algoritmi di flooding sono complessità ottimale, in termini di messaggi inviati, per gli alberi.
+
+Restrizione 2. Grafo completo.
+Aka, ogni nodo è connesso con tutti gli altri.
+In grafi completi: m = n(n-1)/2. Vedi combinatoria o ragionamento intuitivo.
+
+Message(Flooding(G)) \in \theta(n^2)
+Message(SimpleBroadcast(G)) = n-1. Init manda a tutti i suoi vicini.
+Time(SimpleBroadcast(G)) = D(G) = 1
+
+Osservazione. Floding è inefficiente in termini di messaggi per grafi completi, mentre è efficiente per gli alberi.
+Quindi funziona bene per grafi sparsi, che hanno pochi archi.
+
+Idea. Da un grafo G posso sempre passare a T. Costruisco lo spanning Tree ed applico il flooding.
+Occhio, stiamo aggiungendo una restrizione siccome per costruire lo ST devo conoscere la topologia del grafo.
+In protocolli che usano molteplici volte il brodcast, il costo di costruire ST viene ammortizzato.
+
+WAKE-UP PROBLEM.
+Quando in un sistema distribuito un protocollo deve iniziare, serve che tutte le entità siano sveglie.
+Parto da una situazione in cui alcune entità sono attive, mentre altre dormienit. Come faccio a svegliare le entità dormienti?
+
+Idea: ogni entità sveglia manda un segnale di wakeup in flooding.
+
+State S = {ASLEEP, AWAKE}
+Sinit = {ASLEEP}
+Sterm = {AWAKE}
+
+ASLEEP
+spontaneously
+  send(W) to N(x)
+  become(AWAKE)
+receiving(W)
+  send(W) to N(x) - {sender}
+  become(AWAKE)
+
+Costo messaggi.
+1 init -> come flooding. Message(Wakeup(G)) = 2m - n + 1
+Tutti init -> tutti mandano e si fermano. Message(Wakeup(G)) = 2m. Ogni link vede 2 messaggi, corrispondenti a quelli inviati dai due capi dormienti.
+k init -> nel mezzo. Message(Wakeup(G)) = 2m - n + k
+
+Costo temporale. Il caso peggiore è quando ho un solo AWAKE. In quel caso il tempo coincide con quello del flooding. O(n).
+
+SPANNING TREE.
+Spanning Tree T di grafo G = (V, E) è un sottografo aciclico tale che T=(V, E') e E' \subset E.
+Restrictions: single init, archi bidirezionali, total reliability, G connesso.
+
+Attenzione. Non vogliamo che ogni nodo conosca o costruisca uno ST.
+Vogliamo che ogni nodo conosca i suoi vicini nello ST. Visione locale e non globale.
+
+Shout.
+Per prima, cosa l'init invia ai suoi vicini la richiesta di diventare vicini anche nello ST.
+I vicini possono rispondere Y/N.
+Rispondono Y quando non hanno vicini in ST; rispondono N altrimenti.
+Non possono accettare più di un vicino in ST perchè altrimenti sull'albero avrebbero più padri.
+Terminazione? Quando il nodo ha ricevuto risposta da tutti i suoi vicini.
+Ricorda che un nodo può avere più risposte Y se ha molteplici figli su ST.
+
+TODO recupera lezione 17/10
+
+Che ST esce? qualcosa nel mezzo, tra BFS e DFS.
+
+Spanning tree construction by traversal.
+Idk why but we want to explore the graph in dfs fashion
+
+Per applicare la strategia DFS sul grafo dobbiamo sequenzializzare la visita.
+Questo non è il modo normale con cui operano i sistemi distributi, però esistono situazioni in cui abbiamo questa necessità.
+Per sequenzializzare la visita usiamo token passing: ogni nodo passa il token ad un altro nodo; in ogni istante solamente
+un nodo detiene il token.
+
+Con il token passing possiamo implementare algoritmi ricorsivi in sistemi distribuiti.
+Abbiamo 3 tipi di token:
+ - forward token: viene passato ad un vicino x per continuare la visita. Corrisponde alla chiamata ricorsiva DFS(x).
+ - return token: restituto dal vicino quando viene conclusa la visita
+ - backedge token: individua un arco che, durante la visita, porta ad un nodo già visitato. Un backedge è un arco che creerebbe un ciclo.
+
+Algo:
+ - quando ricevo il FT la prima volta memorizzo il mittente (padre in ST), invio il FT ad un vicino no esplorato. Poi attendo.
+ - quando ricevo il RT inoltro il FT al prossimo vicino non esplorato, se ne sono rimasti. Se sono finiti i vicini propago il RT al nodo che mi ha scoperto.
+ - quando ricevo di nuovo un FT, significa che un figlio nello ST, mi ha propagato il FT, quindi si sta completando un ciclo.
+   Propago al mittente il BT. Quel figlio viene segnato come visitato.
+ - Simmetricamente, se in seguito all'invio del FT ricevo un BT token, vuol dire che stavo cercato di propagare FT ad un mio antenato.
+ - Se mi torna indietro un BT, propago il RT 
+
+Tolti i back-edge, rimangono gli archi su cui è stato propagato un BT.
+Lo ST è così composto:
+ - radice: inizializattore
+ - padre di x: nodo dal quale ha ricevuto il FT per primo
+ - figli di x: i vicini che non hanno ritornato un RT
+
+
+Terminazione? ogni nodo conosce quando finisce la visita del suo sottoalbero. Quindi la radice conosce quando la costruzione di ST termina.
+
+Una volta finito l'intero ST la radice può propagare il messaggio di fine seguendo l'albero appena costruito.
+
+Come implementarlo?
+
+\begin{verbatim}
+State S = {INITIATOR, IDLE, VISITED, DONE}
+Sinit = {INITIATOR, IDLE}
+Sterm = {DONE}
+
+VISIT (unvisited, isInitiator) {
+  if |unvisited| > 0 {
+    next = pick(unvisited)
+    unvisited = unvisited - {sender}
+    send FT to next
+    become(VISITED)
+  }
+  else {
+    if not isInitiator {
+      send RT to sender
+    }
+    become(DONE)  // I nodi intermedi terminano dopo aver visitato tutti i vicini
+  }
+}
+
+INITIATOR
+Spontenously TODO
+
+IDLE
+onReceive(FT)
+
+VISITED
+receiving(FT)
+  unvisited = unvisited - {sender}
+  send BT to sender
+
+receiving(BT)
+  TODO da qui in poi 
+\end{verbatim}
+
+Costo in termini di messaggi? mandato un FT su un link, sullo stesso possono passare un RT o un BT. Quindi Message(DFS) = 2m
+
+È dimostrabile che non posso pagare meno di così, quindi l'algo è $\omega(m)$.
+
+Costo in termini temporali? il protocollo è stato pensato per sequenzializzare la visita con token passing; un solo nodo alla volta
+detiene il token e il numero di archi attraversati è dato dal risultato di prima. Time(DFS) = 2m
+
+Possiamo fare di meglio? Time(DFT(G)) >= n-1, ovvero una catena di messaggi lunga almeno quanto i nodi da scoprire.
+
+Possiamo velocizzarlo? possiamo cercare di parallelizzare tutti i messaggi che non contribuiscono alla visita di un nuovo nodo, come i Back-edge.
+
+Come evitare di mandare il BT sui Back-edges? Appena ricevuto il FT, il nodo appena visitato propaga ai suoi vicini il messaggio Visited,
+per avvisarli che è stato visitato. Ogni vicino risponde con un ack per confermare di aver ricevuto l'informazione... il problema è che uno dei vicini
+potrebbe ricevere il FT da una catena più lugna di nodi, prima che gli arrivi il Visited. Il nodo appena scoperto può procedere con il protocollo precedente
+appena gli arrivano gli ack da tutti i vicini.
+
+In modo simmetrico un nodo che riceve un Visited deve rispondere con un Ack.
+
+Un nodo può ricevere più notifiche di vistited. TODO esempio.
+
+Per ogni link possono passare al massimo 4 messaggi: Visited, Ack, FT, RT.
+Time(DFT no backedge(G)) = 2(n-1) + 2n = 4n - 2
+n-1 sono gli archi di un albero con n nodi, compreso lo ST.
+Le catene di visited-ack possono essere lunghe almeno 2: visited poi ack.
+Abbiamo una catena lunga 2 per ogni nodo.
+Le catene non viaggiano in parallelo rispetto alla catena dei token.
+
+Abbiamo migliorato rispetto a prima perchè ora il costo temporale dipende dal numero di nodi e non dal numero di archi.
+Ricorda che in un grafo completo può fare una grade differenza, siccome m = n^2 - n.
+
+Questo a discapito del numero di messaggi, che diventano Message(DFT no backedge(G)) <= 2(n-1) + 2(n-1) + 4(m - (n-1))= 4m.
+FT e RT vengono inviati sugli n-1 archi dello spanning tree.
+Stessa cosa per visited e ack.
+Mentre invece per gli archi che non appartengono allo ST passano 4 messaggi. TODO why
+
+SHOUT+ vs DFT. Usiamo la DFT per sequenzializzare il problema ed evitare che il tempo della costruzione dipenda dalla visita.
+Shout può dare alberi più bassi. Se volessimo l'albero il più basso possibile, ovvero con il diameetro più piccolo, (stile BFS) dovremmo determinare
+il centro del grafo e costruire il BFS tree radicato nel centro di G.
+
+Cosa succede se non abbiamo un unico iniziatore? dobbiamo scegliero. Il protocollo che sceglie una delle entità e la elegge a leader
+è chiamato leader election. Possiamo quindi applicare la leader election e assegnare al leader il ruolo di unico iniziatore del grafo.
+
+I protocolli di election sono impossibili da realizzare se le entità sono tutte deterministche e indistinguibili (non dotate di un identificativo).
+Tutte le dimostrazioni si basano sul fatto che tutte le entità si comporteranno allo stesso modo.
+
+Idea 1: spanning tree multipli. Ogni inizializzatore costruirà il suo ST con messaggi identificati dal suo ID.
+Ogni nodo apparterrà a K spanning tree corrispondenti agli K inizializzatori. Anche i costi visti in precedenza verranno moltiplicati per 
+un coefficiente K.
+
+Potrei, dati tutti gli ST, sceglierne arbitrariamente uno, ad esempio quello con l'identificativo più piccolo.
+In questo caso devo sapere quando la costruzione di ST è terminata.
+
+Idea 2: costruzione selettiva. Come prima, ma una entità smetterà di costruire se tutti gli ST tranne uno, deciso arbitrariamente come prima.
+Nel caso medio abbasso i costi, in quello peggiore come Idea 1.
+
+Reminder:
+ - rooted trees have a root. Each node knows its parent and its children.
+ - unrooted trees do not have a root, and each node just knows its neighbors.
+
+Vediamo il caso degli unrooted trees. Restrizioni: link bidirezionali, connettività, link fifo (ordinamento preservato), affidabilità totale, conoscenza della topologia.
+Def. Conoscenza della topologia: ogni nodo conosce i suoi vicini. Deduce che è una foglia dal fatto che ha un solo vicino.
+
+SATURATION TECHNIQUE.
+E.g. minimum finding: ad ogni nodo viene associato un valore. Si vuole trovare il minimo. Alla fine della computazione ogni nodo deve
+sapere se il suo valore è o non è il minimo.
+
+Dati N vicini di un nodo X, ogni nodo X aspetta N-1 messaggi e propaga il minimo locale sul link rimanente.
+Il minimo locale è il minimo locale tra il proprio valore e i valori ricevuti dai vicini.
+Le foglie sono i primi nodi a mandare il proprio valore sull'unico link a cui sono connessi.
+
+Gli ultimi due nodi dell'albero riceveranno i valori da tutti i propri vicini. Questi due nodi calcolano il minimo globale e lo propagano
+indietro a tutti i nodi dell'albero. Questi due nodi si chiamano nodi saturati, siccome ricevono il valore da tutti i vicini.
+
+Attenzione: i nodi saturati non si trovano necessariamente nel centro dell'albero, possono essere spostati verso le foglie dipendentemente
+dalla velocità dei link.
+
+Teo. La saturazione completa (full saturation) può essere raggiunta autonomamente indipendentemetne dal numero di iniziatori.
+
+Wrapping up:
+ 1. wake up stage: gli iniziatori mandano un messaggio di sveglia; in un tempo finito tutte le entry si sveglieranno. Dato che i canali
+ sono FIFO, se l'iniziatore è foglia, può inviare subito dopo il proprio valore.
+ 2. Saturation stage: iniziato dalle foglie, consiste nella propagazine del proprio valore.
+ 3. Resolution stage: iniziato dalle entità saturate. Consiste nella propagazione del messaggio di notifica.
+
+Lemma. Esattamente due entità, tra loro vicine, diventano saturate.
+
+Message complexity.
+ 1. Activation. Il caso peggiore è quando ogni nodo è iniziatore. Ogni link vede due messaggi. siamo su un albero m = n-1. <= 2(n-1)
+ 2. Saturation. Su ogni link passa 1 messaggio ad eccezione del link tra i due nodi saturati, che vede un messaggio in più. (n-1) + 1. <= n
+ 3. Resolution. Propagazione su ogni link ad eccezione del link tra i nodi saturati. <= n-2
+
+Tot <= 2(n-1) + n + n - 2 = 4n - 4
+
+Takeaway: è facile lavorare sugli alberi, ma nella pratica non sono robusti a fallimenti.
+
+Cit. La saturazione più esser usata per risolvere un ampio insieme di problemi che prevedano la valutazione di una funzione distribuita:
+questo framework prende il nome di Distributed Function Evaluation.
+
+CONVERGECAST.
+Su alberi radicati, dove esiste una nozione di alto e basso, il minimo può essere calcolcato con convergecast.
+Le foglie inviano al padre il proprio valore. Le foglie interne calcolano il minimo locale e lo propagano verso l'alto (la radice).
+La radice arriva ad avere il minimo. Re-invia il minimo alle foglie.
+
+Tip. I protocolli covergecast si visualizzano come onde che viaggiano verso l'alto e verso il basso.
+
+Teo. Senza ID univoci è impossibile implementare un protocollo deterministico di covergecast su unrooted trees.
+
+
+LEADER ELECTION.
+Nota: I nomi degli algoritmi del libro possono essere diversi a quelli presenti il letteratura; a volte sono rinominati da Santoro.
+
+Teo [Agluin 80]. Il problema della leader election è inrisolvibile, con protocolli deterministici, se le entità non hanno ID univoci.
+Senza ID univoci, con protocolli deterministici, non si riesce a rompere la simmetria tra i nodi.
+
+Leader election su alberi radicati costa 0 messaggi. O(n) per la notifica agli altri nodi. Ci basta scegliere la radice come leader
+e tutti gli altri nodi come follower.
+
+Su alberi non radicati eleggere il leader può essere fatto prendendo l'ID minimo usando la tecnica della saturazione.
+Complessità dei messaggi di prima: 4n-4. Ogni nodo che non abbia il valore minimo è follower.
+
+In alternativa, su alberi non radicati è possibile eleggere il leader applicando la saturazione e scegliendo il nodo saturato con
+valore minimo. In questo modo il meccanismo di elezione si ridurrebbe ai due nodi saturati invece che all'intero albero.
+In più, come prima, la saturazione ha l'effetto collaterale di permettere ad ogni nodo di distinguare il padre e i figli;
+il padre viene individuato come il nodo a cui viene inviato il messaggio, mentre i figli i nodi da cui viene ricevuto.
+
+L'elezione tra i due nodi saturati comporta uno scambio aggiuntivo di 2 messaggi: quelli necessari a determinare chi abbia ID minore
+tra i due, alzando la complessità dei messaggi da 4n-4 a 4n-2. Sembrerebbe quindi svantaggioso guardando il numero di messaggi...
+
+In realtà, facendo un'analisi con granularità più fine --- considerando il numero di bit scambiati invece che il numero di messaggi ---
+si scopre che il secondo metodo è più efficiente del primo, applicando l'ottimizzazione che consiste nel inviare messaggi vuoti per
+raggiungere la saturazione, scambiandosi solamente gli ultimi 2 messaggi con valore.
+Infatti, l'elezione del minimo prevede lo scambio degli n messaggi di elezione contenenti un valore, mentre i restanti messaggi sono 
+notifiche contenenti un numero costante C di bit: num bits <= n (c + log_2 MaxID) + c [(n-2) + 2(n-1)] = n (c + log_2 MaxID) + c (3n-4).
+I c bit presenti nei messaggi di notifica sono necessari per distinguere il TIPO di messaggio (e.g., tra activation e resolution).
+Il primo termine modella il numero di bit necessari a distinguere il tipo di messaggio e codificare il valore nel messaggio.
+Il secondo termine modella il numero di messaggi necessari per attivazione e risoluzione.
+
+Mentre il secondo metodo prevede principalmente lo scambio di notifiche: num bits = 2 (c + log2 MaxID) + c [(n-2) + 2(n-1) + n] = 2 (c + log2 MaxID) + c [4n - 2].
+
+Forte relazione ST e LE.
+Dato uno ST la leader election può essere fatta con O(n) messaggi per la notifica.
+Dato il leader di un grafo, lo ST può essere costruito con O(m) messaggi.
+
+Leader election on rings.
+
+Ring. n nodi, m archi. n = m. Topologia simmetrica.
+
+Perchè? topologia sparsa, con pochi link, ma comunque ridondante alla rottura di al più 1 link.
+
+LE on a Ring. All the Way [Le Lann 1977]. 
+
+Restrizioni:
+ - funziona su link uni- e bi- direzionali
+ - ID univoci
+ - affidabilità totale
+ - local orientation: non serve un senso globale di dx/sx. Ogni entità conosce i suoi due link come: 'one way' e 'the other way'.
+
+Idea semplice: ogni entità fa broadcast del proprio ID. Ogni nodo vede gli ID di tutte le entità; il minimo ID corrisponde a quello
+del leader. Ogni nodo sa se è il leader o un follower, appena viene determinato un minimo comune.
+
+Il problema si sposta sulla terminazione dell'algoritmo. Un nodo non sa quando è terminata la determinazione del minimo.
+Soluzioni:
+ - aggiungiamo una conoscenza a priori del numero di nodi del ring
+ - aggiungere la restrizione che i link siano FIFO. La ricezione di un messaggio comporta il wakeup di un nodo, che invia prima il
+ proprio valore, poi fa il forward di quelli ricevuti.
+ In questo caso un nodo X invia il proprio ID e, quando torna a se stesso, significa
+ che X ha visto tutti gli ID degli altri nodi (il cammino per tornare su se stesso è il più lungo possibile).
+
+Alternativa: possiamo incorporare un contatore nel messaggio. Il contatore viene incrementato ogni volta che passa per un nodo.
+Un nodo ha conoscenza del numero di nodi del ring quando torna il messaggio con il proprio ID; da questo messaggio ricava il numero
+di nodi che il messaggio ha attraversato. Successivamente, attende finchè non riceve quel numero di IDs prima di poter dedurre se
+il nodo è follower o leader.
+
+TODO: codice
+
+Costi.
+
+Message Complexity.
+Ogni messaggio deve attraversare tutti gli n nodi del ring.
+Ogni nodo genera un messaggio.
+Quindi O(n**2)
+
+Ogni messaggio contiene un ID e un contatore dei nodi. Il contatore non avrà mai un valore superiore a quello dell'ID, sotto l'assuzione
+che gli ID vengano creati da 1 a max(ID), quindi la dimensione del messaggio sarà 2log(N).
+
+Dimensione totale: O(n**2 log(N))
+
+Time complexity. La catena più lunga nel caso peggiore è quella in cui esiste un solo iniziatore.
+Il messaggio dell'iniziatore completa un giro (n time units), a quel punto sono rimasti in coda gli n-1 messaggi dei restanti nodi.
+Costo 2n-1.
+
+Nel caso migliore tutti i nodi si svegliano insieme e in un ciclo completo il problema viene risolto.
+
+Ottimizzazione. As far as it can [LCR --- Lang Chang Roberts, 1979]. \\
+Idea: ogni nodo fa avanzare solamente il valore minimo ricevuto fino a quel momento. \\
+Assunzioni: iniziatori multipli o iniziatore singolo (garantire l'univocità dell'iniziatore è difficile da garantire) \\
+Terminazione: il nodo che riceve un messaggio con il suo ID all'interno sa di essere il leader, siccome il valore è sopravvissuto ad
+un intero giro del ring. Tale nodo sa di essere il leader, deve inviare una notifica agli altri nodi che essi non sono stati eletti. \\
+
+TODO codice
+
+Message complexity. \\
+Worst Case. \\
+Ragioniamo nel caso di comunicazione unidirezionale.
+Caso sincrono in cui tutti siano iniziatori e gli ID disposti in ordine crescente nello stesso senso del senso di propagazione
+(e.g. senso orario).
+Ad ogni time unit viene fermato solo un ID, da quello più grande a quello più piccolo.
+Quindi... alla prima time unit girano n messaggi, poi uno smette di essere propagato e ne girano n-1, poi n-2, fino ad arrivare a 1. \\
+Somma dei primi n numeri naturali, ovvero formula di Gauss più n messaggi di notifica: TODO formula
+
+TODO diagramma
+
+Best case. \\
+Singolo iniziatore coincidente al leader. 2n messaggi considerando le notifiche.
+
+Message chain worst case: iniziatore appena dopo il futuro leader. \\
+Per svegliare il leader: n-1 \\
+Per far tornare il minimo al leader: n \\
+Per notificare l'elezione: n \\
+Numero totale di messaggi: n + (n-1) + n = 3n - 1 \in O(n) unità di tempo. \\
+
+Ottimizzazione. Controlled Distance [HS --- Hirschberg Sinclair 80]. \\
+Assunzioni: \textbf{bidirectional links}, affidabilità totale, local orientation, dinstinct IDs. \\
+Idea: lavorare per passi, in ogni stadio avere ogni nodo nello stato candidate o defeated. \\
+Pro: non richede la conoscenza della dimensione del ring. \\
+
+All generico stadio i:
+ 1. Ogni candidato manda un messaggio con il suo ID in entrambe le direzionali.
+ 2. Il messaggio ha una distanza massima che cresce in modo esponenziale con il progredire dello stadio ($d = 2^i$), oppure può fermarsi
+ nel caso in cui in incontri un ID più piccolo del suo.
+ 3. Se il messaggio non incontra un ID più piccolo viene rimandato indietro a chi lo ha originato.
+ 4. Un candidato a cui ritornano indietro i messaggi da entrambe le direzioni sopravvive allo stadio attuale come candidato e prosegue
+ allo stadio successivo.
+
+Un nodo se riceve un messaggio con ID minore del priorio vengono sconfitti e propagano il messaggio. \\
+Se un nodo riceve i messaggi inviati da entrambe le parti continua ad essere un leader candidato. \\
+Se un nodo invia un messaggio ad una distanza così alta che torna indietro, significa che lui è il leader; infatti è sopravvissuto
+ad un intero giro del ring nella stessa direzione. È importante che torni al leader almeno uno dei due messaggi, non entrambi. Il leader
+deve notificare agli altri nodi che è stato scelto un leader, gli altri nodi non hanno modo di sapere che è stato eletto altrimenti. \\
+
+Come distinguere se il messaggio è back (rimbalzato su un nodo) o forth tornato indietro? il messaggio nasce taggato come forth e viene
+taggato come back appena un nodo decide di rispendirlo indietro. \\
+
+Nota: ogni nodo ha un proprio stadio, lo stadio non è condiviso globalmente tra tutti i nodi. \\
+Nota: un nodo che riceve un ID più alto del suo non risponde al mittente con un messaggio di back, in modo tale che il mittente rimanga
+in stato di attesa senza spammare messaggi. Se il nodo era dormiente viene svegliato da quel messaggio, per poi iniziare a inviare il
+proprio ID.
+
+TODO animazione
+
+Perchè è una soluzione migliore della precedente? con la distanza crescente la catena massima diventa logaritmica nel numero di nodi.
+Con al massimo log(N) + 1 stage riesco a determinare sicuramente il leader.
+
+Pseudocode.
+
+State S = {ASLEEP, CANDIDATE, DEFEATED, FOLLOWER, LEADER}  // Uno stato in più rispetto a prima, so di non essere il leader ma inizio a lavorare
+Sinit = ASLEEP
+Sterm = FOLLOWER, LEADER
+
+ASLEEP
+Spontanously
+  INITIALIZE
+  become(CANDIDATE)
+
+  Receiving('Forth', ID, recvd_limit)
+  if ID < id(x): // Never ID = id(x) from IDs uniqueness
+TODO: continue pseudocode
+
+Nota: quando sono in CANDIDATE non posso riceve il back di un altro nodo, siccome il back richiede che prima il forth sia passato;
+al passaggio del forth l'esito può esssere defeated o leader.
+
+Terminazione? sì, l'ID più piccolo riuscirà a girare tutto il ring battendo gli altri e diventanto il leader.
+
+Message complexity. \\
+Abbiamo pensato a questo algoritmo per evitare il numero quadratico di messaggi.
+
+Dato un candidato al tempo i, il numero massimo di messaggi generati è 2 * 2 * 2^i.
+2 direzioni back and forth. 2 di avanti e indietro. 2^i distanza massima che ogni messaggio puó attraversare.
+
+Quanti candidati posso avere al max al tempo i?
+Se sono candidato arrivato al tempo i, vuol dire che al passo precedente ho mandato 2^(i-1) messaggi.
+Se sono sopravvissuto fino a quel punto significa che gli altri non hanno ID minore, sono stati sconfitti i vicini alla distanza
+2^(i-1) a destra e a sinistra al passo precedente.
+Il caso peggiore è quello pari; nel caso dispari avrò due nodi defeated contigui (candidate-defated-defeated-candidate). TODO diagram.
+Il nodo più vicino sarà a distanza $d = 2^(i-1)+1$.
+
+Cosa succede se rimane una parte frazionaria minore di d (aka la divisione non da risultato intero)? come nel caso dispari quello
+spazio non potrà contenere candidati siccome la distanza minima non è sufficiente.
+Numero max candidati al tempo i? $\floor \frac{M}{d}$.
+TODO diagram
+
+Nel caso peggiore, il numero massimo di messaggi è il numero max di messaggi per candidato allo stadio i per il numero massimo
+di candidati allo stadio i. TODO formula
+
+Ora... quanti step al massimo? raddoppio sempre la distanza, quindi un messaggio completa un giro al massimo intorno con circa
+$log_2(N)$ stadi. Per la precisione $\ceil{log_2(N)} + 1$. Il ceil serve per discretizzare stando abbondanti; il più 1 serve perchè gli
+stadi iniziano da 0.
+
+Numero massimo di messaggi.
+Max messaggi allo stadio 0: 4n. 4 messaggi (dx e sx sia back che forth) \\
+Al generico stadio 1 <= i <= $\ceil{log_2(N)} - 1$: 8n \\
+Allo stadio $\ceil{log_2(N)}$: 2n. Entrambi i messaggi del leader che completano un giro. \\
+Notifica: n. In una sola direzione.
+
+Numero totale di messaggi: $4n + 2n + n + \sum_{i=1}^{\ceil{log_2(N) - 1} 8n} = 4n + 2n + n + 8n (log_2(N) - 1) = 7n + 8n (log_2(N) - 1) \in \BigO{n logn}$.
+
+Time complexity. Intuitivamente esponenziale.
+
+\section{FloodMax}
+FloodMax protocol, da Distributed Algorithms di Lynch.
+
+Nota: in questa implementazione eleggiamo il nodo con l'ID massimo.
+
+Restrizioni: link bidirezionali, ID distingi, grafo connesso, canali fifo, no failures, le entità conoscono il diametro del grafo
+o un suo upper bound (nuovo vincolo) che chiamiamo genericamente D. Un UB (a volte molto largo) è sicuramente il numero di nodi.
+
+Idea: flood del max ID nella rete.
+
+L'algoritmo funziona in round:
+- Ogni idea mantiene il max ID visto fino a quel momento
+- Ogni nodo propaga solamente il maxID ai vicini
+- I vicini rispondono con il maxID visto da loro fino a quel momento
+
+Nel caso sincrono (aka tutti i nodi partono insieme), al tempo i, ogni nodo sa qual'è l'ID più grande a distanza i-1. \\
+Mi serve che i nodi siano allineati prima di procedere al prossimo round. \\
+Mi fermo dopo D round, quando ho la garanzia che anche i nodi più marginali abbiano ottenuto il massimo di tutta la rete, racchiusa entro
+la distanza D.
+
+Problema: se il sistema è asincrono devo aggiungere la sincronizzazione sul round.
+
+Correttezza: ad ogni round r il maxID raggiunge tutte le entità entro la distanza r dal leader; questo è possibile solamente grazie al
+meccanismo di sincronizzazione.
+
+Message Complexity. Per ogni round, 2 messaggi per link, per il numero di round. $2m * D$. \\
+Time Complexity. La catena più lunga di messaggi è quella che propaga l'ID del leader tra i due nodi più distanti, quindi $D$.
+
+Fully Synchronous Systems.
+Clock e sincronizzati e delay limitati (bounded).
+I clock sono sincronizzati e hanno periodo \delta. Corollario: tutti i messaggi partono contemporaneamente.
+
+Restrizioni: bounded communication delays. Esiste ed è conosciuto da ogni nodo un upper bound \Delta sul delay di trasmissione.
+I tempi di trasmissione non sono comunque costanti, ma ho la garanzia che ogni messaggio arrivi entro \Delta.
+
+Posso riadattare l'unità di tempo a delta: $u = ceil(\Delta / \delta)$.
+
+Sarebbe irragionevole avere un UB sul delay con messaggi di dimensione arbitraria, potenzialmente infinitamente grande.
+Dobbiamo limitare la dimensione dei messaggi: i messaggi suono upper bounded.
+Abbiamo un parametro di sistema $c$ che indica che ogni messaggio avrà dimensione massimo c bits.
+Messaggi più grandi devono essere spezzati per rientrare nella dimensione massima. 
+
+Queste assunzioni semplificano il calcolo della time complexity siccome gli orologi sono tutti sincronizzati.
+Data una distanza e un tempo globale, posso calcolare la velocità di un messaggio.
+
+Election su ring sincroni. Speeding.
+Nota: gli algoritmi asincroni possono funzionare anche su sistemi sincroni, ma non il contrario.
+Idea: velocizzare i messagi con gli ID più piccoli in modo che i sconfiggano i più forti il prima possibile.
+Non serve conoscenza di N numero di nodi.
+Restrizioni: tutti i nodi partono insieme.
+
+Quando un nodo riceve un messaggio contenente i, se i < x, aspetta f(i) unità di tempo, in caso contrario, se i > x, lo scarta.
+
+Diventa leader il nodo che vede ritornarsi il prorprio ID.
+
+Una funzione che funziona (:)) è l'esponenziale: $2^i$; gli ID maggiori aspetteranno più tempo, mentre gli ID minori li sorpasseranno.
+Voglio che solo il leader riceva il messaggio che contiene il suo ID; nessun altro deve riceverlo prima di lui.
+
+Quanto ci mette min ad attraversare il ring? $2^min * n + n$ ovvero il tempo di attesa più il tempo di attraversamento degli n link.
+Questo arriva prima di tutti gli altri? vediamo il secondo più piccolo, ovvero min+1. Nel tempo del primo riesce a percorrere
+al massimo $(2^{min+1} * n + n) / 2^min = n/2 + n/2 = n$.
+
+Il secondo più piccolo riesce a percorrere al massimo $(2^{min+2} * n + n) / 2^min = n/4 + n/4 = n/2$.
+
+Il numero totale di messaggi nel caso peggiore è $n + n/1 + n/2 + ... + n/(2^{n-2}) = 3n \in O(n)$.
+Il numero di bit è O(n log(max)).
+L'attesa massima totale è O(n * 2^min), ovvero il tempo necessario al minimo per riuscire a richiudersi sul leader.
+
+Il silenzio è espressivo. Possiamo usare il silenzio per comunicare informazioni.
+
+Ad esempio, possiamo comunicare qualsiasi numero tra i due nodi con solo 2 messaggi da 1 bit l'uno, a patto che i clock siano molto
+precisi. Dato un numero da comunicare N, ad un istante di tempo t mando il bit di inizio (eg. un messaggio con 0) e dopo N tick di clock
+mando un messaggio di stop (eg. un messaggio con 1); il ricevente calcola la differenza tra i clock: t+N-t, ottenendo l'informazione.
+
+Elezione su ring sincroni. Attesa. \\
+Idea: il leader aspetta un certo tempo prima di decidere che è stato eletto. \\
+Restrizioni: come prima + conoscenza del numero di nodi, necessaria per sapere i tempi di comunicazione. \\
+
+Reminder: su ring orientati il numero massimo di hop per collegare qualsiasi coppia di nodi è n-1; tra due nodi esiste un solo percorso. \\
+Assunzione: tutti le entità iniziano simultaneamente. \\
+
+La funzione di attesa dipende da i e n: f(i, n). Gli ID più piccoli aspettano meno, mentre gli ID più grandi aspettano di più. \\
+Il vincolo che dobbiamo rispettare per il funzionamento del protocollo e che la notifica del leader raggiunga tutte le entità mentre
+stanno ancora aspettando. Quello più distante per il messaggio di notifica è il nodo prima di lui, che ha distanza n-1
+(ricorda che il ring è orientato); il caso più rischioso è quello in cui tale nodo ha ID pari a x+1.
+
+Idea: ogni idea 
+
+Formalmente, siamo nel caso peggiore se leader ID = x; Dato il nodo con secondo più piccolo y = x+1; data la distanza tra i due
+d(x, y) = n-1.
+Deve essere vero che: f(x+1, n) - f(x, n) >= n-1. Ovvero, l'attesa del secondo minimo deve essere almeno il tempo necessario alla notifica
+del leader per raggiungerlo, nel caso in cui si trovi nella posizione peggiore, ovvero appena "dietro" al leader.
+La funzione f(i, x) = i*x è la più piccola che soddisfa questo vincolo.
+
+Questo funziona con inizio simultaneo, tigliendo questo vincolo abbiamo bisogno di una nuova strategia basata su wakeup.
+Ogni nodo sveglia il vicino e inizia ad aspettare. Vogliamo che il futuro leader finisca il waiting prima di tutti gli altri,
+indipendentemente dal tempo di sveglia. Dobbiamo riprogettare la funzione di attesa.
+Dato t(j) tempo di attesa di j: f(i, n) s.t. t(x) + f(x, n) + d(x, y) < t(y) + f(y, n).
+
+Sicuramente:
+ - t(x) - t(y) < n. Il tempo di attesa tra ogni coppia di nodi è al masismo n-1
+ - d(x, y). La distanza tra due nodi è al max n-1.
+=> t(x) - t(y) + d(x, y) < 2n
+=> t(x) - t(y) + d(x, y) + f(x, n) < 2n + f(x, n)
+=> t(x) + d(x, y) + f(x, n) < 2n + f(x, n) + t(y)
+=> ci chiediamo se: t(x) + d(x, y) + f(x, n) < [2n + f(x, n)] + t(y) < t(y) + f(y, n)
+
+Cerchiamo una funzione tale che 2n + f(x, n) < f(y, n) => 2n < f(y, n) - f(x, n). \\
+La funzione minima è f(i, n) = 2n * i.
+
+Message complexity: 2 messaggi (sveglia e notifica) per link; ogni messaggio 1 bit (distinguiamo tra wu e notifica). O(n) bits.
+Dal vincolo: t(min) + f(min, n) + n < 2n * min + 2n \in O(n*min) time units.
+
+Attenzione: se il minimi sono ad esempio un indirizzo IP, il tempo di attesa minimo può diventare molto costoso.
+
+Universal waiting. Questo protocollo può essere esteso ad un grafo qualunque. \\
+Per generalizzarlo dobbiamo considerare il diametro del grafo come massima distanza tra due nodi al posto di n-1. \\
+
+Come al solito, se le entità non hanno ID univoco, non riusciamo a fare election con protocolli deterministici\dots
+quindi cerchiamo di fare l'analogo protocolli randomici.
+
+Protocolli di:
+ - MONTE CARLO: terminano sempre ma il risultato è corretto con una probabilità che deve essere studiata.
+ - LAS VEGAS: il risultato è sempre corretto, se il protocollo termina (terminazione con una certa probabilità).
+
+Las Vegas, nel caso della leader election, termina correttamente, ovvero con l'ID del leader.
+
+Presupposto: non abbiamo gli identificativi \\
+Idea: strategia del waiting ma con gli ID scelti randomicamente da ogni nodo. Facciamo dipendere il tempo di attesa dall'identificativo. \\
+Idea: per aspettare il minor tempo possibile possiamo estrarre il numero casuale tra 0 e b, con b upper bound al massimo N. In realtà, può
+essere anche più piccolo, l'importante è che l'ID più piccolo sia univoco, sui valori più grandi possono ammassarsi anche più valori.
+
+1. Il protocollo è composto da round
+2. In ogni round ogni entità seleziona un intero casuale e lo pone uguale al suo identificativo
+3. se il minimo è unico quella entità diventa il leader, altrimenti si procede con il prossimo round.
+
+Problema: come fa un nodo ad accorgersi se è leader o no? potrebbe succedere che due nodi estraggano lo stesso numero, guardare il numero
+contenuto nel messaggio di notifica potrebbe non permettere di disambiguare. Siamo nel caso sincrono, possiamo usare il tempo che è
+passato dall'invio della nostra notifica per determinare se è il nostro messaggio a tornare indietro o quello di un altro nodo.
+Il nostro messaggio avrà atteso almeno N tick prima di tornare.
+
+Message Complexity. O(n) bits per i messaggi di notifica e restart.
+Time Complexity 1 round. O(n*min_id + n) and min_id <= b -> O(n * b). Se scegliamo b=1, il costo temporale diventa O(n) per il singolo round. \\
+Ogni nodo può estrarre 0 o 1. Se estrae 0 diventa il leader, in assenza di altri zero. \\
+Quanti round? dobbiamo progettare l'estrazione del numero il modo che sia molto facie estrarre 1 e molto improbabile estrarre 0:
+ - 0 con prob 1/n
+ - 1 con prob (n-1)/n
+
+Qual'è la prob che l'algoritmo termini dopo R round? \\
+Scomponiamo il problema. Abbiamo vinto se un nodo sceglie zero e tutti gli altri 1; succede con prob $\frac{1}{n} (\frac{n-1}{n})^{n-1}$.
+Qualunque degli n nodi può scegliere lo zero\dots sommiamo le probabilità: $n \frac{1}{n} (\frac{n-1}{n})^{n-1} = (\frac{n-1}{n})^{n-1} -> \frac{1}{e}$.
+
+Per n grandi. Psuccess = 1/e. Pinsuccess = 1 - 1/e.
+Prob of success at round R, meaning insucesses in previous R-1 rounds: $\frac{1}{e} (1 - \frac{1}{e})^{R-1}$.
+Questa è la distribuzione geometrica. Valore atteso dopo r round e = 2.7 -> 3.
+
+Tenendo conto della time complexity per un round. Final Time Complexity: O(n).
+
+Questo funziona se abbiamo un clock condiviso tra tutti i nodi. Significa avere i nodi su un sistema centralizzato, e.g. processi su una
+stessa macchina. Tra nodi distribuiti servono politiche di allineamento degli orologi o serve l'utilizzo di un tempo logico.
+
+ROUTING.
+Problema: Il nodo x vuole comunicare un'informazione con l'entità y. Come fa x a raggiungere y?
+Broadcast routing: x manda in broadcast l'informazione a tutta la rete. Soluzione più semplice, funziona sempre, ma alto numero di
+messaggi e problema di confidenzialità
+Routing: processo di determinare un percorso tra sorgente x e destinazione y.
+Router: nodo dedicato a determinare quale percorso deve seguire un messaggio per raggiungere la destinazione.
+
+Ogni entità ha un identificativo univoco (global names). Ogni link ha un'orientamento locale. Dei costi possono essere associati ai link.
+Ogni entità ha una routing function f(). Per ogni destinazione y, f(y) è il link sul quale il messaggio deve essere mandato per raggiungere y.
+
+La decisione è pressa sulla base di un'informazione presente nel messaggio (indirizzo del destinatario) e un'informazione locale (routing table).
+
+Stiamo attenti a: routing memory, ovvero i bits necessari per memorizzare la tabella, e routing time, ovvero il tempo necessario per trovare il next hop.
+
+Esempio: tabella con una riga per ogni nodo dst; ogni riga contenente il nodo dst, il next hop ed, eventualmente il costo.
+TODO immagine.
+Costo. Temporale O(n log(n)) con binary search siccome è ordinata. Spaziale O(n log max_id); n righe, ognuna con ID del next hop.
+
+I cammini minimi rispettano il principio di subottimalità. Per questo possiamo ricordarci solo il next hop nella tabella di routing.
+
+Sol semplice. Se ogni nodo conoscesse a priori tutto il grafo, potrebbe costruirsi l'albero dei cammini minimi a partire da quello e ricavare i next hop. \\
+
+Sol distribuita 1. Ogni nodo deve arrivare ad avere una vista completa del grafo. \\
+Idea: ogni nodo comunica a tutti gli altri quali sono i suoi vicini e quanto costano gli archi verso di loro.
+Broadcast tutti a tutti, chiamato Map Gossip:
+ - costruiscono uno spanning tree qualunque per limitare il numero dei messaggi. O(2m) con SHOUT+.
+ - ogni entità riceve le informazioni dal suo vicino. Ogni coppia di nodi si scambia info, quindi O(2m).
+ - ogni entità propaga l'info sullo ST. Ogni entità x propaga un messaggio a tutti i suoi vicini: (n-1) deg(x) TODO
+ - ogni entità calcola localmente lo stortest path
+
+Dai costi sopra, il totale è O(mn).
+
+Problema: non è detto che tutte le entità abbiano spazio sufficiente per memorizzare l'intero grafo.
+
+Sol distribuita 2. \\
+Idea: ogni entità conosce i suoi vicini e iterativamente aggiorna il suo distance vector man mano che i vicini gli propagano informazioni
+su nodi sempre più lontani.
+
+Ogni riga della tabella di routing può contenere il next hop con un costo associato (in un dato momento prima della convergenza,
+potenzialmente subottimale), oppure un unknown next hop con un costo infinito, perchè irraggiungibile.
+
+Questo protocollo è una implementazione distribuita di Bellman-Ford. Richiede al massimo n-1 iterazioni (lunghezza massima di un cammino
+minimo su grafo) prima di arrivare a convergenza.
+
+Message Complexity. Ad ogni iterazione ogni entità manda il proprio distance vector ai propri vicini.
+Ogni messaggi contiene n righe con 2 colonne, con destinazione e costo. O(n) propagato a |N(x)| nodi.
+
+Messaggi per iterazione: n \sum_x |N(x)| = n 2m
+Messaggi totali: (n-1) n 2m \in O(m n^2)
+
+Idea: possiamo evitare di costruire una vista globale per ogni entità? sì, possiamo adottare un approccio distribuito.
+
+Prima però ragioniamo sull'aggiornamento delle tabelle di routing in caso di aggiornamento dei nodi. Come gestire i cambiamenti della rete?
+
+Map update: un cambiamento nella rete rende le mappe locali inaccurate.
+Distance vector update: un cambiamento nella rete potrebbe portare all'aggiornamento di uno o tutti (nel caso limite in cui cambia un link
+da cui passa tutto il traffico della rete) i distance vector.
+
+Quando una entità identifica un cambiamento locale possiamo:
+ - ricalcolare tutte le routing tables (dispendioso)
+ - aggiornare le tabelle di routing correnti. Ogni entità inizia una nuova iterazione del protocollo usando x come nuovo dato, finchè la tabelle convergono
+
+La rete potrebbe non essere ancora arrivata a convergenza prima del prossimo aggiornamento della rete.
+
+Mantenere le routing table costantemente aggiornate con il shortest path aggiunge overhead alla rete. Nel mondo reale si preferisce
+rilassare il vincolo di shortest path, lasciando solo quello di delivery.
+
+Min hop routing. Tutti i link hanno lo stesso costo, non memorizziamo i costi, li assumiamo unitari.
+
+Il Breadth first spanning tree è lo shortest spanning tree. Lo possiamo calcolare lo BFST con SHOUT nel caso sincrono.
+Nel caso asincorno non abbiamo questa garanzia: potremmo avere link molto più veloci di altri, nel caso estremo una catena di link che
+portano prima in profondità che in larghezza.
+
+Nei sistemi asincroni dobbiamo inglobare i nodi per livelli, dove ogni livello è determinato dalla distanza dalla radice.
+Un nodo al livello i avrà vicini solamente alla distanza i (fratelli), i-1 (almeno uno, il padre), e i+1.
+È impossibile abbia vicini al livello i-2, altrimenti il nodo in questione sarebbe al livello i-1.
+Per determinare i nodi alla distanza i+1 sono necessari solamente i vicini dei nodi alla distanza i.
+
+Possiamo iniziare a costrurie il prossimo livello solamente quando quello corrente è completato per intero.
+I vicini dei nodi del livello corrente possono essere già nell'albero se sono al livello precedente o sono nodi fratelli.
+
+L'orchestratore e inziatore di questo processo sarà la radice.
+Versione distribuita del BFST. Costruiamo iterativamente lo ST.
+Per comunicare tra i nodi sfruttiamo l'albero già costruito.
+
+Alla generatica iterazione i, abbiamo 3 stadi:
+ 1. la radice propaga un messaggio di 'inizio dell'iterazione i' al partial tree.
+ 2. I nodi del livello i-1 avviano la procedura Exploring:
+  - ogni entità x alla distanza i-1 TODO manca la parte di propagazione
+    1. invia 'explore i' ai ai vicini, esclusi il genitore del nodo
+    2. aspetta un ack da ogni nodo vicino contattato. Se riceve:
+      - ack-OK il vicino è un figlio
+      - ack-KO il vicino è già nell'albero (lv i-2, lv i-1, o lv i ma già contattato ad un altro nodo)
+      - explore-i il vicino è già nell'albero
+   - entità y non presente nell'albero, alla ricezione di 'explore i':
+    1. la prima volta invia ack-OK e segna il nodo da cui ha ricevuto explore i come parent
+    2. dalla volta dopo in poi invia ack-KO
+  3. I nodi lv < i-1:
+    - aspettare iterazione i ended da tutti i figli
+    TODO COMPLETA
+    
+Come terminare la procedura? la radice si deve accorgere che abbiamo incluso tutti i nodi e inviare una notifica di terminazione.
+Un'idea funzionante ma dispendiosa è fare al più N-1 iterazione (caso peggiore, nodi in catena), conoscendo N numero di nodi.
+La fase di invio dei messaggi di terminazione è un convergecast. Il convergecast può essere esteso aggiungendo l'informazione
+di assenza di ulteriori nodi su cui espandere l'albero.
+Un nodo del livello corrente sa di essere una foglia se riceve solo ack-KO dai vicini, quindi propaga al genitore un valore speciale.
+Un generico nodo, propaga il valore speciale verso la radice solamente se ha ricevuto solo valori speciali dai figli.
+
+Message complexity.
+Il raggio di una sorgente è la distanza massima delle foglie dell'albero BFST, ovvero r(s) = altezza di BFST radicato in s.
+Alla generica it i:
+ 1. broadcast al partial tree fino alla distanza i-1: n_i - 1 (conto il numero di link dell'albero parziale). Con n_k nodi dell'albero parziale all'inizio dell'iterazione k.
+ 2. explore. Ogni nodo manda esattamente 1 explore; non è possibile lo mandi più di una volta perchè vorrebbe dire che è stato considerato due volte per
+ lo stesso livello.
+ 3. convergecast per propagare 'iterazione i finita'. Stesso numero di (1) dato che i messaggi devono tornare indietro per lo stesso numero di link.
+
+Sommando 1 e 3: TODO formula
+Per 2: 2 * deg(root) + \sum_{x \neq root} 2 * (deg(x) - 1) = TODO conto
+TODO formula finale \in O(n^2)
+
+Si può migliorare in termini di messaggi? Sì, posso evitare di mandare il messaggio di explore ai nodi del livello prima;
+in questo modo il NO-ACK viene usato per segnalare che il nodo è già stato collegato ad il nodo padre.
+
+Miglioramento? Ogni arco viene coinvolto una sola volta nella procedura explore-risposta.
+Solo due messaggi per arco nella fase di explore: 2m.
+
+Time complexity. Alla generica iterazione i:
+ - broadcast nell'albero parziale, fino alla distanza i-1. i-1 messages
+ - explore. 2 messages
+ - convergecast. di nuovo i-1 messages
+
+Sommando tra due iterazioni: \sum_{i=1}^{r(s)} 2i \in O(r(s)^2) \in O(n^2), dato che il diametro peggiore è n, ovvero una catena.
+
+SHORTEST PATH SPANNING TREE.
+Realizziamo la versione distribuita di Dijkstra. Ricorda che è un algoritmo greedy, che fa uso di una coda di priorità.
+La soluzione geedy viene tradotta con una soluzione distribuita che lavora per diverse iterazioni; come prima, la sorgente agisce da coordinatore.
+Alla generica iterazione i abbiamo una parte di albero dei cammini minimi formato e una parte dell'albero originale ancora da esplorare.
+
+TODO diagram.
+
+Definiamo outgoing edge (outgoing dalla propsettiva dello SPST) come un arco che collega il SPST parziale verso un nodo non ancora considerato.
+
+Inizializzazione:
+ 1. tutti gli archi sono impostati ad outgoing
+ 2. tutte le entità conoscono il costo degli archi incidenti
+ 3. solo la sorgente si trova nell'albero, tutte le altre entità sono fuori
+ 4. la sorgente notifca di essere all'interno dell'albero
+ 5. TODO
+
+Generic iteration:
+ 1) La radice propaga 'start iteration' nello SPST parziale O(n)
+ 2) una entità generica x nel SPST parziale, alla ricezione di 'start iteration'
+  2a) calcola la somma tra il costo per arrivare a x e il costo di aggiunta di ogni nodo: delta x + c(x, y) per ogni (x, y) in outgoing edges
+  2b) seleziona l'arco (x, y_x) di costo minimo
+ 3) Le entità in partial SPST calcolano 
+
+Terminazione. TODO
+
+Ricorda: ogni iterazione un solo nodo è aggiunto al SPST
+
+Message Complexity. All'iterazione i il spartial SPST inizia con i nodi e finisce con i+1.
+- Il broadcast per start iteration: i-1 messaggi.
+- Convergecast: i-1 messaggi.
+- TODO
+
+Time Complexity. TODO
+
+Distributed all shortest path spanning trees.
+1 SPST O(n^2)
+n SPST O(n^3)
+
+Come si relazione con il gossip iterating?
+In Gossip iterating:
+- 1 albero: O(mn) \in O(n^3)
+- n alberi: O(mn^2) \in O(n^4)
+
+Gossip gestisce meglio il ricalcolo delle tabelle di routing.
+
+Faults and failures.
+L'affidabilità totale non esiste nella realtà. Come gestiamo questa cosa?
+
+Prima di tutto, cosa può andare storto? X goes wrong.
+In base alla causa: fault di esecuzione su un nodo, fault di trasmissione, failure di un componente come un link o un'entità.
+In base alla durata: transiente o permanente.
+In base all'estensione: localizzato, diffuso (tutti i nodi)
+
+Nessun protocollo è resiliente ad un numero arbitrario di faults.
+
+Limitiamo il numero e/o il tipo di fallimenti che ammettiamo, per lavorare sotto restrizioni in cui è più comodo lavorare.
+Ad esempio, in base a quanto abbiamo speso per quel componente.
+L'insieme delle ipotesi sotto le quali lavoriamo si chiama failure model.
+
+Component failure models:
+ - link failure: solo i links possono fail
+ - entity failure: solo le entità possono fail
+ - hybrid failure: possono fallire entrambi
+
+I faults sono permanenti: "once faulty, forever faulty".
+
+Tipi di entity failures dalla meno alla più pericolosa:
+ - carsh or fail stop: entità che funzionavano correttamente smettono all'improvviso di funzionare
+ - send/receive omission: occasionalmente l'entità perde messaggi in ingresso o messaggi pronti in uscita
+ - byzantine fault: l'entità non segue il protocollo, può eseguire qualsiasi azione
+
+Un fallimento bizantino è un qulsiasi fallimento che mostra sintomi diversi a diversi osservatori.
+
+Tipi di link failures (byzantine):
+ - omission: il messaggio viene inviato ma mai recapitato
+ - addition: il messaggio è consegnato ad un'entità, anche se nessuno l'aveva generato
+ - corruption: il messagio recapitato è diverso da quello originale
+
+I protocolli fault tolerant (FT) dipendono dalla topologia del grafo su cui sono applicati.
+Problemi non triviali sono risolti con la partecipazione di tutti i nodi. Serve connettività.
+
+Def. Edge connectivity: numero minimo di archi che, se rimossi, disconnettono il grafo.
+Def. Node connectivity: numero minimo di nodi che, se rimossi, disconnetono il grafo.
+
+Eg. TODO tabella
+network - max deg - node conn - edge conn
+tree    - n-1 (star) - 1 - 1
+bidirectional ring - 2 - 2 - 2
+grafo completo - n-1 - n-1 - n-1
+
+Lemma. Se k link arbitrari possono fallire, è impossibile effettuare il broadcast su una edge connectivity minore di k+1
+Lemma. Se k nodi arbitrari possono fallire, è impossibile effettuare il broadcast su una node connectivity minore di k+1
+
+P-AGREEMENT PROBLEM.
+Input. Ogni entità ha in input un valore v_x da un set conosciuto di valori S.
+Output. Almeno p entità devono accordarsi sullo stesso valore d \in S in un tempo finito.
+
+Operiamo in una condizione di non banalità, aka no set con un solo valore, no stesso valore di inizializzazione per tutti i nodi.
+
+Se p = n siamo nel caso del consenso. Ovvero, tutti i nodi devono accordarsi su un valore comune.
+Il problema del consenso si manifesta in casi reali come nei database distribuiti per decidere se una transazione è da committare o scartare,
+diagnostica per decidere se un nodo è diffettoso o funzionante, o voting.
+
+Analizziamo ora il problema del consenso nel caso di reti con link failures di tipo omission.
+Vincoli di output:
+ - argreement: tutte le entità devono accordarsi sullo stesso valore
+ - non banale: se tutte venongo inizializzate con lo stesso valore, quello è il valore su cui si è raggiunto il consenso
+ - terminazione: in un tempo finito
+
+Two general's tale.
+Due generali dello stesso esercito si trovano in cima ad due montagne diverse e devono decidere insieme SE e IN QUALE MOMENTO attaccare, 
+per farlo devono scambiarsi dei messaggi. Non possono farlo visivamente perchè verrebbero intercettati.
+Si scambiano messaggi attraverso i messaggeri, che passano per una vallata; nella vallata ci sono però gli scout nemici, che potrebbero
+uccidere i messaggeri. Una volta inviato un messaggio deve essere restituito un ack. Il problema?
+Il link (la vallata) è inaffidabile, anche gli ack potrebbero non arrivare. Servirebbe l'ack dell'ack dell'ack ecc.
+
+Questo problema non ha soluzione, neanche in sistemi sincroni.
+
+Lemma. In qualsiasi esecuzione di un protocollo funzionante in cui si decide di attaccare, almeno un messaggio deve essere consegnato.
+Altrimenti, sarebbe impossibile distinguere tra lo scenario in cui un generale ha deciso di non attaccare e lo scenario in cui
+ha deciso di attaccare ma il messaggio è stato perso nella vallata.
+
+Dim per assurdo.
+Assumiamo che esistsa un protocollo che risolva il problema e che il link trasporti almeno un messaggio prima del fallimento.
+Prendiamo un'esecuzione E non banale in cui il protocollo porta entrambi i generali ad attaccare, con un numero di messaggi k >= 1.
+Prendiamo una seconda esecuzione E' in cui l'ultimo messaggio, da A a B, non viene consegnato.
+Le due istanze sono indistinguibili per A. Dall'assunzione che il proto sia corretto sappiamo che anche B deve aver attaccato (le loro
+mosse devono essere concordi).
+Conseguenza: i due generali hanno attaccato con k-1 >= 0 messaggi.
+Dividiamo i due casi:
+ - se k-1 > 0 abbiamo una contraddizione. La prima esecuione, E, doveva essere quella che richiedeva il minor numero di messaggi, ma ne abbiamo trovata una con un numero minore (k-1).
+ - se k-1 = 0 abbiamo una contraddizione. La seconda esecuzione è andata a buon fine con zero messaggi, ma almeno uno era richiesto.
+
+Pensa ad esempio alle spunte blu di Whatsapp in una conversazione tra due persone. Le spunte blu servono per aggirare questo problema e
+sono fonite dal server, un terzo attore della comunicazione.
+
+Consenso con link failures.
+Teorema. Se il numero di fallimenti F supera o paraeggia la edge connectivity, è impossibile raggiungere il consenso con un proto deterministico.
+La edge connectivity deve essere almeno F+1.
+
+Assumiamo che la edge connectivity sia almeno F+1.
+Il broadcast continua a funzionare siccome la rete non è completamente disconnessa.
+
+Eg. Flooding
+  Msg complexity <= 2m
+  Time complexity <= Diametro del grafo d(G) con faulty links
+
+Ogni entità fa broadcast del suo valore, ogni entità applica la stessa funzione sui valori ricevuti, alla fine tutte convergono allo
+stesso risultato. Il consenso è raggiunto.
+
+Broadcast in un grafo completo con fallimenti dei link. Aka Two Steps.
+Assumiamo ci siano al massimo F fallimenti < n-1 e F sia conosciuto al nodo x che inizia il broadcast.
+Tip. Tecnica dell'avversario. Tecnica che consiste nel 'giocare' ad essere un avversario del protocollo, utile per analizzare il caso peggiore.
+
+Servono due passaggi:
+ 1. x manda I a F+1 vicini. Sicuramente almeno ad un vicino arriva I.
+ 2. ogni entità ricevente il messaggio x lo propaga a tutti i vicini, escluso quello che gli ha mandato l'informazione.
+
+Message Complexity. al massimo (F+1) * (F+1) (n-2) = (F+1) (n-1) \in O(Fn).
+La prima parte sono i messaggi mandati da x. La seconda parte sono i messaggi mandati dagli altri nodi. Ogni nodo
+del secondo step deve mandare il messaggio a n-1 vicini: evita se stesso e quello da cui ha ricevuto l'info.
+
+Leader election in grafo completo con fallimento dei link.
+Restrizioni: start simultaneo, ID univoci, F < n-1 known, conoscenza della topologia (grafo complet) e di conseguenza il numero di nodi.
+
+FT broad election:
+ 1. ogni entità manda il suo ID con Two Steps
+ 2. ogni entità calcola il minimo e decide se è il minimo
+
+Costo di prima ripetuto per n volte: n (F+1) (n-1) \in O(Fn^2)
+
+DOMANDE.
+slide 5 computazione con failure. Typo crush -> crash.
+slide 28. not larger than... then the number of failures can be equal to the edge connectivity?
+
+TODO: lezione di ven 14
+
+Algoritmi di consenso randomizzato.
+
+Oss. al round r i messaggi myvalue contengono o 0 o 1 e, al massimo un valore tra 0 e 1, può essere quello con la maggioranza assoluta
+(almeno n/2+1).
+
+Dato che mando un messaggio con un valore specifico, ovvero non "?", solamente se vedo la metà più uno, allora durante un round girano
+solo proposte con lo stesso valore.
+
+L'algoritmo garantisce non banalità. TODO
+
+L'algoritmo garantisce agreement. TODO
+
+L'algoritmo garantisce la terminazione in un numero di round $\in O(2^n)$.
+Abbiamo due scenari possibili:
+ - se un nodo x riceve la maggioranza dei valori v, propone v a tutti gli altri.
+ - se nessuna entità vede la maggioranza allo stadio di proposal, non è detto che termini al round successivo.
+
+Se al prox round almeno n/2+1 nodi generano lo stesso valore, viene generata una maggioranza.
+La probabilità che quel numero di nodi si accordi sullo stessso valore, è sicuramente maggiore della probabilità che TUTTE le entità
+scelgano lo stesso valore: P_{majority same value} >= P_{all same value} = 1/2^n
+
+Quindi... se sono termino al round r vuol dire che ho fallito nei r-1 round precedenti e ho avuto successo in quello attuale: p (1-p)^{r-1}.
+
+Fault Bizantini.
+I fault bizantini sono più difficili da affrontare perchè le enità si comportano in modo diverso nel tempo: possono seguire il protocollo per un pò,
+poi simulare un crash, poi riprendere, ecc.
+
+Anche gli attacchi informatici in cui l'attaccante prende il controllo di un nodo sono un esempio di comportamenti bizantini.
+Anche la collaborazione tra nodi bizantini è possibile e potrebbe fuorviare il protocollo.
+
+Teorema. Esiste un risultato secondo il quale è possibile progettare un protocollo deterministico che raggiunga il consenso tollerando
+al più f < n/3 fault bizantini.
+
+Consenso su sistema sincrono con failure bizantini.
+Restrizioni: sincronicità, grafo completo, connettività completa, failure bizantina, inizio sync, ID univoci, ogni nodo conosce gli IDs
+dei suoi vicini (restrizione aggiuntiva per fare fronte all'impredicibilità dei fault bizantini).
+
+Mandiamo solo gli zero, gli 1 sono dedotti dalla mancata comunicazione, possibile siccome il protocollo è sincrono.
+
+Aggiungiamo ai messaggi l'ID del proposer e il timestamp di invio del messaggio: (0, ID(x), t).
+In questo modo possiamo rilevare un forge (riceviamo msg da ID doppi o da nodi che non sono nostri vicini), e un tempo fittizio (sistema sincrono).
+
+Oss. L'importante è che anche i nodi bizantini si comportino in modi coerente, rispettando il protocollo. Rileviamo solo comportamenti
+"bizzarri"; e.g. far accettare ad alcuni lo zero, ad altri un uno. Non possiamo impedire che il bizantino proponga un valore iniziale
+a suo piacere.
+
+Vediamo il meccanismo RegisteredMail per comunicare lo zero. Assomiglia al broadcast con faulty link.
+RegisteredMail per nodo non faulty x:
+Posso effettuare un wakeup mandando (init, 0, ID(x), t). \\
+Ricevuto un messaggio (init, 0, ID(y), t) da un nodo y facciamo:
+ - broadcast di (echo, 0, ID(y), t) se il messaggio proviene dal canale su cui è registrato y, al tempo t+1, ed è il primo init ricevuto da quell'ID.
+ - ignoriamo il messaggio in tutti gli altri casi. 3 scenari: tempo falso, ID falso wrt link registrato, init doppio
+
+Dal teorema, almeno f+1 non faulty echos arrivano. TODO: completa ragionamento.
+
+Se un bizantino forgia un messaggio, potrebbe accordarsi con gli altri bizantini per propagare questo messaggio senza rispettare il protocollo.
+I nodi non faulty vengono ingannati? No, non dovrebbero. Anche assumendo che tutti i bizantini facciano eco del messaggio,
+i bizantini sono uno in meno rispetto ai non faulty: f < f+1.
+
+TODO: 1a ora lezione 20 novembre
+Prima cosa spiegata: TellZero_byzantine
+
+Message Complexity of TellZero_Byz.
+n-1. Un messaggio a tutti
+Extra per esame: consenso randomizzato con fault bizantini, su sistemi asincroni.
+
+DISTRIBUED HASH TABLES.
+Come gli algoritmi distribuiti, esistono anche le strutture dati distribuite.
+Le entità di un sistema distribuito devono essere in grado di gestirle distribuendo omogeneamente il carico, facendo fronte ad entrata
+ed uscita di nodi, e possibilmente facendo la computazione in modo efficiente.
+
+Def. Una hash table memorizza coppie (k, v), dove k è una chiave appartenente all'universo U, e v è un valore (anche chiamato dato
+satellite). La funzione di hash $h$ mappa U in un insieme finito di dimensione più piccola; quindi, è impossibile evitare conflitti:
+$h : {0, 1, ..., m-1} \space m << |U|$.
+
+Distributed Hash Tables (DHTs).
+Obj: implementare una hash table in un sistema distribuito, memorizzando le coppie sui nodi.
+
+Questo campo ha avuto una forte spinta dal 1999, quando nasce l'idea di usare i nodi di Internet per memorizzare e condividere file musicali.
+Vedi: Napster
+
+Napster. I file musicali sono memorizzati sulle macchine. Un indice centralizzato distribuito che mantenga dove sono memorizzate le canzoni
+e quali nodi fossero attivi.
+
+Vantaggi: implementazione semplice senza necessità di motori di ricerca
+Svantaggi:
+ - scalabilità: l'indice riceve il carico di tutte le query
+ - robustezza: centralizzato era un single point of failure
+ - unreliability: i nodi possono fornire qualsiasi file vogliano al richiedente
+
+Venne chiuso nel 2001 a causa della distribuzione illegale di musica. Il fallimento è dovuto, dal punto di vista tecnico, a causa dell'indice
+centralizzato. Napster coniò il termine P2P.
+
+Evoluzione: Gnutella (2000). Non più indice centralizzato. Ogni nodo conosce solo i suoi vicini, anche se sarebbero completamente connessi
+da Internet; questa rete logica si chiama "Overlay Network".
+
+La richiesta dei file avviene tramite un algoritmo di flooding. Il numero di messaggi è troppo alto. I messaggi vivono per un numero limitato
+di hop definito dal Time To Live (TTL).
+
+Vantaggi: completametne distribuito, resitente a failures. \\
+Svantaggi: TTL troppo bassi possono impedire il ritrovamento dei file richiesti, tanti messaggi sulla rete. \\
+
+KaZaA (2001) scende ad un compromesso tra rete decentralizzata e completamente distribuita.
+Idea: rete ibrida che prevede supernodes (SN) e ordinary nodes (ON). Solo i supernodes si parlano tra loro e mantengono un indice dei file mantenuti
+dagli ordinary nodes sotto di lui.
+
+Search:
+ - ON manda richiesta a SN
+ - SN cerca tra i sui ON
+ - SN mette in comunicazione i due ON
+
+Vantaggi e svantaggi di entrambi gli approcci.
+
+Nascono le DHT: esigenza di un ricerca efficiente per nome del brano, in una rete più strutturata rispetto a prima.
+
+- la funzione di hash mappa la chiave in un nodo
+- nodo univoco perogni chiave
+- possibilmente balancing tra il load dei nodi
+- robustezza ad ingresso e uscita dei nodi dalla rete
+
+Chord (2001). I node names (tipicamente gli indirizzi IP) vengono mappati in uno spazio circolare {0, ..., 2^m-1}, chamato identifier circle, che fornisce
+il NodeID. Ogni nodo mantiene un puntatore al suo successore, ovvero il prossiom nodo per NodeID.
+Hashiamo anche le chiavi (nomi degli oggetti) sullo stesso spazio, ottenendo il KeyID.
+La chiave è memorizzata nel nodo successore, ovvero $min(NodeID) | NodeID >= KeyID$.
+$m$ definisce la cardinalità dello spazio delle chiavi hashate.
+La funzione di hasing scelta da Chord è SHA1; genera chiavi distribute in modo abbastanza omogeneo nell'insieme di output.
+
+Ogni nodo deve essere in grado di effettuare un lookup.
+Se un nodo mantiene la chiave, può rispondere direttamente, altrimenti risponde che non la possiede, rimbalzando la richiesta al prossimo nodo.
+
+Miglioramento: nodi con finger table.
+La finger table contiene un numero di entry proporzionale al logaritmo del numero dei nodi.
+Nel nodo i, la entry j contiene un finger, che corrisponde al primo nodo con ID >= i + 2^{j-1}.
+E.g.: Nodo 8
+j finger
+1 15
+2 15
+3 15
+4 20
+5 32
+6 44
+
+La finger table è costruita chiedendo sulla rete chi possiede l'ID i + 2^{j-1}. Se non esiste un ID con esattamente quel valore, risponderà
+il nodo "precedente" al valore, comunicando l'ID del suo successore.
+
+Data una chiave k su cui fare il lookup (LookUp(k)), il nodo richiedente i, contatta il nodo j con il più grande ID minore o uguale a k.
+Il nodo j risponde con l'ID più grande minore o uguale a k secondo la sua finger table.
+
+Nota che la distribuzione dei nodi nella finger table è ammassata verso l'inizio del range, siccome la crescita è esponenziale.
+
+Come rendere questo protocollo robusto a ingressi ed uscite di nodi?
+TODO: problema
+Soluzione: protocolli di self stabilization. Manteniamo la correttezza dei lookup, rilassando i vincoli di performance (aka accettiamo lookup
+più lenti).
+
+JOIN.
+Teo. Se i successori sono aggiornati, il lookup è corretto se interroga prima il successore della finger table.
+Se il new node diventa il nuovo successore del nodo richiedente, il richiedente sarà aggiornato, mentre la finger table non è detto.
+Se l'inserzione avviene più avanti nel ring, verrà usata la finger table, che porta ad un lookup ad un nodo precedente a quello nuovo;
+il nodo nuovo verrà poi suggerito al richiedente.
+
+Stabilization protocol (eseguito periodicamente da tutti i nodi).
+1. Fino a questo momento pred(B) = B'. Node A --stabilize--> Node B. Aka per A, B è il successore.
+2. If A > pred(B): pred(B) = A. A si è infilato tra B' e B; diventa il nuovo predecessore di B. Notifica a B' da parte do B: notify(pred(B)).
+3. Il nodo A, quando notificato B' come predecessore di B, se A < B' < B, aggiorna succ(A) = B'.
+
+Durante l'aggiornamento di predecessore, vengono passate le chiavi che saranno in gestione al new node, ma non ancora rimosse dal vecchio gestore.
+Quando A imposta succ(A) = B', potranno essere cancellate le chiavi in gestione a B.
+
+LEAVE.
+Prima di tutto dobbiamo capire il motivo del leave.
+
+Senza failure, il nodo può notificare il successore e migrare chiavi e valori satellite al successore; infine, notificare al predecessore
+quale sarà il suo nuovo successore.
+
+Con failure la situazione è più critica, perchè la migrazione può non avvenire.
+Strategia 1: teniamo r successor invece di 1. Se muore un successore passiamo al prossimo. La finger table può non essere sufficiente siccome 
+ad un certo punto inizia a saltare. \\
+Strategia 2: meccanismo di ridondanza che mantenga le chiavi e i valori satellite su più nodi.
+
+Approfondimento: peer to peer (P2P) networks.
+Tipicamente: inaffidabili a causa della loro natura di partecipazione volontaria, ma più resistenti ad attacchi.

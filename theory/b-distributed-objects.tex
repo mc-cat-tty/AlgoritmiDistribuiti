@@ -1,0 +1,40 @@
+\section{Distributed Objects}
+La comunicazione è un aspetto fondamentale dei sistemi distribuiti. \\
+Socket e MPI sono meccanisimi di basso livello, scomodi da usare.
+Nel tempo sono nati meccanismi di più alto livello come procedure remote (RPC) e oggetti distribuiti, che permettessero una programmazione similare
+a quella classica anche su sistemi distribuiti.
+
+Problemi del \textit{parameter passing}:
+ - type management: diversi linguaggi di programmazione forniscono tipi di dato diversi e rappresentano tipi simili in modo diverso.
+ In più, a parità di linguaggio di programmazione, lo stesso tipo può essere rappresentato diversamente dipendentemente dall'architettura.
+ - semantica del passaggio: per valore o per riferimento. Se passo un oggetto per riferimento ma non condivido la memoria su cui è allocato, il passaggio è inutile.
+
+Mettiamo ad esempio un passaggio per riferimento in C, come sappiamo quanto è grande l'area di memoria da passare?
+Amesso che usiamo il passaggio per valore, cosa succede se l'oggetto contiene dei puntatori ad altri oggetti? shallow vs deep copy.
+
+Static vs dynamic invocation.
+Invocazione statica: oggetto e metodo da invocare sono decisi a compile time, e.g. obj.method(params) \\
+Invocazione dinamica: la scelta di oggetto e metodo avvengono a runtime, e.g. invoke(obj, id(method), params) \\
+
+Reliability.
+Nel caso remoto possono avvenire errori di comunicazione dovuti alla rete ed errori locali ai due nodi.
+
+Deployment. Aka come distribuire gli oggetti sul sistema distribuito?
+Diversi criteri di ottimizzazione:
+ - minimizzzazione delle interzzion
+ - bialndiamento dle carico
+ - allocazione hardwarre aware
+
+I criteri possono essere contrastanti.
+La rilocazione a runtime degli oggetti aggiunge complessità.
+
+Esistono diversi middleware, che mettono a disposizione diversi servizi, come: naming e distribuzione (RMI), discovery, persistenza e replica.
+
+Tecnologie omogenee vs eterogenee.
+Nelle tecnologie omogenee un solo linugaggio di programmazione è consentito, come Java RMI. Il supporto ai nodi remoti può essere fornito direttamente dal linguaggio. \\
+Nelle tecnologie eterogenee sono consentiti più linguaggi di programmazione, come COBRA, ma in questo caso un middleware è necessario.
+
+Distributed vs remote objects. \\
+Un oggetto distribuito e1 un oggeto il cui stato (aka le cui proprietà) sono distribuiti tra più nodi. \\
+Invece, un oggetto remoto è un oggetto è un oggetto che risiede su un nodo remoto e i cui metodi vengono invocati da un altro nodo.
+

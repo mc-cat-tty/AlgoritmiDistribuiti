@@ -1,0 +1,100 @@
+\section{Remote Method Invocation}
+RMI è la versione distributa della programmazione ad oggetti, nello stesso modo in cui RPC è la versione distribuita della programmazione
+procedurale.
+
+RMI permette di invocare meotodi presenti su altre JVM, eventualmente diverse JVM possono essere eseguite sullo stesso host fisico.
+
+Un oggetto remoto è un oggetto che implementa una sottointerfaccia di \texttt{Remote}.
+
+\subsection{Params Passing}
+Localmente, i tipi primitivi vengono passati per copia, mentre gli oggetti per copia del riferimento.
+
+In una chiamata remota, la condivisione di un riferimento non ha significato.
+Anche il passaggio per riferimento viene trasformato in un passaggio per valore attraverso serializzazione e deep copy.
+
+Tuttavia, non tutti gli oggetti possono essere serializzati, come socket e file.
+
+Gli oggetti remoti sono sotituiti/rappresentati localmente dagli stub.
+Mettiamo che un nodo N1 voglia invocare un metodo su N2, passandogli un oggetto remoto presente su N3.
+Quando, come in questo caso, il riferimento ad un oggetto remoto viene passato come parametro, viene passato al nodo remoto lo stub
+dell'oggetto remoto.
+
+Riassunto.
+I tipi primitivi e gli oggetti locali vengono sempre passati per valore, quindi copiati.
+Gli oggetti remoti vengono passati per riferimento.
+
+Tutti i metodi che vengono resi remoti potrebbero sollevare \texttt{RemoteException}.
+Tutte le chiamate a metodi remoti devono avvenire in un try-catch.
+
+
+RMI non consente il deploy degli oggetti remoti, ma è presente un meccanismo di recupero del bytecode attraverso HTTP.
+RMI fornisce un servizio di naming, chiamato RMI registry, che permette di scoprire su quale nodo risiedono i metodi remoti.
+
+\texttt{Rmregistry} è un nameserver che mantiene le coppie nome-oggetto; un oggetto può registrarsi sul nameserver (binding) ed essere recuperato
+da altri nodi attraverso il lookup. Il registry risponde al lookup con una reference all'oggetto richiesto.
+È un demone in ascolto sulla porta 1099 (default).
+
+\subsection{Naming Service}
+Accessibile attraverso i seguenti metodi statici di \texttt{java.rmi.Naming}:
+ - \texttt{bind()}
+ - \texttt{rebind()}
+ - \texttt{lookup()}. Necessario cast della reference ritornata.
+
+I nomi hanno la forma \texttt{//host/service}.
+
+\subsection{Stub}
+Gli stub sono proxy ad metodi e parametri di un oggetto remoto. Fanno da intermediari tra client e server.
+Nella v1 di RMI venivano chiamati skeleton.
+
+Gli stub sono oggetti java generati dinamicamente. Nelle precedenti versioni di Java serviva un compilatore speciale per compilarli: \texttt{rmic}.
+
+\subsection{Web Server}
+Quando viene utilizzato?
+Il client e il server potrebbero non avere alcuni class files necessari a runtime.
+Ad esempio, stub e skeleton non sono necessari per compilare il client ma servono a runtime.
+Oppure, nel caso in cui un server abbia come valore di ritorno di un metodo un oggetto non definito sul client.
+
+RMI ottiene il bytecode necessario attraverso un web server in ascolto sulla porta 80 (porta scelta perchè tipicamente aperta sui firewall).
+
+\subsection{Implementazione}
+Un'interfaccia remota è un'interfaccia che estende \texttt{java.rmi.Remote}.
+Ogni metodo remoto deve essere dichiarato con \texttt{throws java.rmi.RemoteException}.
+
+Il server deve essere sottoclasse di \texttt{java.rmi.server.UnicastRemoteObject}.
+Il server implementa le interfacce dichiarate in precedenza.
+Un'istanza del server deve essere registrata sul registry mediante \texttt{bind()} (prima registrazione) o \texttt{rebind()}.
+
+Il client, dopo aver fatto \texttt{lookup()} dell'oggetto remoto, può usarlo come local reference.
+
+Le classi remote usate dal client sono necessarie per la compilazione, quindi devono essere presenti sulla codebase locale o possono
+essere presenti su una codebase remota dopo aver specificato l'URL mediante \texttt{-Djava.rmi.server.codebase=}.
+
+Esecuzione:
+ 1. rmiregistry running
+ 2. run server
+ 3. run client
+
+\subsection{Esempio di Server}
+Definiamo l'interfaccia remota:
+\begin{verbatim}
+public interface <interface-name> extends Remote {
+  <list-of-remote-methods>
+}
+\end{verbatim}
+
+Definiamo il server:
+\begin{verbatim}
+public class <server-name> extends UnicastRemoteObject implements <interface-name> {
+  <other-remote-methods>
+}
+\end{verbatim}
+
+Registriamo il server: \texttt{Naming.rebind(<server-name-str>, <server-obj>)}
+
+Compiliamo il server: \texttt{javac <server-name>.java <server-name>.java <server-name>.java}
+Eseguiamo il registry: \texttt{rmiregistry}
+Eseguiamo il server: \texttt{java <server-name>}
+
+Sul server deve essere definita una policy di sicurezza in \texttt{\$JAVA_HOME/jre/lib/security/java.policy}, in cui si forniscono almeno
+i permessi per lavorare su socket come accept, resolve and connect.
+
