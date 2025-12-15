@@ -1,121 +1,74 @@
-\section{Introduction}
+\section{Introduzione}
 \subsection{Logistica del Corso}
 Il corso è strutturato in due moduli disconnessi: algoritmi di approssimazione e algoritmi distribuiti
-(affrontati dal punto di vista applicato nella sezione del prof. Cabri).
-
-Esame: orale (2/3) e progetto (1/3)
-
+(affrontati dal punto di vista applicato nella sezione del prof. Cabri). \\
+Esame: orale (peso 2/3) e progetto (peso 1/3). \\
 Slide non sempre sufficienti, vedi libro, vecchie edizioni rilasciate pubblicamente.
 
 \subsection{Problemi}
-Ciò che vogliamo risolvere, generalizzando il più possibile.
-
+Ciò che vogliamo risolvere, generalizzando il più possibile. Chiamiamo i generici input del problema \textit{parametri}.
+Un'istanza di un problema si ottiene assegnando valori specifici ai parametri.\\
 I problemi possono essere classificati in 3 categorie, in base al tipo di soluzione cercata:
 \begin{itemize}
-  \item Problemi decisionali: output Y/N 
-  \item Problemi di ricerca: cerca una \textit{soluzione ammissibile} (ammissibile = che soddisfa una proprietà)
+  \item Problemi \textbf{decisionali}: output Yes/No
+  \item Problemi di \textbf{ricerca}: si cerca una \textit{soluzione ammissibile} (ammissibile = che soddisfa una proprietà)
   tra tutte le possibili soluzioni.
-  \item Problemi di ottimizzazione: ad ogni soluzione ammissibile è associato un costo; si cerca la \textit{soluzione ottima},
-  ovvero quella che massimizza o minimizza tale costo
+  \item Problemi di \textbf{ottimizzazione}: ad ogni soluzione ammissibile è associato un costo; si cerca la \textit{soluzione ottima},
+  ovvero quella che massimizza o minimizza tale costo, espresso da una \textit{funzione obiettivo}.
 \end{itemize}
 
 \subsection{Algoritmi}
-Def. Un algoritmo è una procedura generale generale per risolvere un problema, con le seguenti caratteristiche:
-sequenza finita di passi (altrimenti il sorgente non sarebbe finito), non ambigua,
-effettivamente realizzabile (eg, no divisioni per zero), in grado di terminare in tempo finito.
+\defbox{Un \textbf{algoritmo} è una procedura generale per risolvere un problema, con le seguenti caratteristiche:
+sequenza finita di passi (altrimenti il codice sorgente non sarebbe finito), non ambigua,
+effettivamente realizzabile (e.g. no divisioni per zero), in grado di terminare in tempo finito (e.g., no cicli infiniti).
 L'algoritmo deve sempre ritornare un risultato che appartiene all'insieme delle soluzioni;
-una soluzione può essere anche un errore.
-(Knuth)
+una soluzione può essere anche un errore. (D. Knuth)
+}
 
-Un algoritmo non corretto può non terminare o non ritornare un risultato errato (sollevando un errore).
+Cerchiamo algoritmi \textbf{corretti} per un dato problema.
+Un algoritmo non corretto potrebbe non terminare o non ritornare un risultato corretto.
 
-Gli algoritmi efficienti usano poche risorse in termini di spazio e tempo.
-Il tempo è più prezioso rispetto allo spazio, in quanto non è riutilizzabile.
+Gli algoritmi \textbf{efficienti} usano poche risorse in termini di spazio e tempo.
+Il tempo è più prezioso rispetto allo spazio, in quanto non è riutilizzabile.\\
+Le misure di efficienza devono essere generalizzabili, non specifiche per un dato esecutore (e.g., workstation più o meno potente).
+Per caratterizzare il \textbf{tempo} di esecuzione, si usa il numero di operazioni di elementari in funzione dell'input,
+necessarie per risolvere problema nel caso peggiore. Questo funge da upper bound per le altre esecuzioni.
+Per lo \textbf{spazio} si usa il numero di celle di memoria, in funzione della dimensione dell'input.
 
-Le misure di efficienza devono essere generalizzabili, non specifico per un dato esecutore.
-Per il tempo si usa il numero di operazioni di elementari in funzione dell'input,
-necessarie per il problema nel caso peggiore. Questo funge da upper bound per le altre esecuzioni.
-Per lo spazio si usa il numero di celle di memoria, in funzione della dimensione dell'input.
+\defbox{La \textbf{dimensione del problema} misura la quantità di informazione necessaria per codificare l'istanza di un problema.}
 
-Def. La dimensione del problema misura la quantità di informazione necessaria per codificare l'istanza di un problema.
+Nel \textbf{costo logaritmico} la dimensione dipende dal numero di bit necessari per rappresentare un input.
+E.g. algo di fattorizzazione: sempre 1 solo elemento di input, ma più è grande più sarà lenta la fattorizzazione.\\
+Nel \textbf{costo uniforme} la dimensione dipende dal numero di elementi necessari per rappresentare l'input.
 
-Nel costo logaritmico la dimensione dipende dal numero di bit necessari per rappresentare un input.
-Nel costo uniforme la dimensione dipende dal numero di elementi necessari per rappresentare l'input.
-E.g. fattorizzazione di un numero.
-
-Il costo computazionale di un \textit{problema} è il costo dell'algoritmo più efficiente (di minimo costo) che risolve il problema.
-L'UB di un problema può essere impostato trovando un algoritmo in grado di risolvere il problema.
-Il LB di un problema è il minimo costo necessario per un algoritmo per risolvere il problema.
-Dimostrare il LB non è scontato; eg. per i problemi di ordinamento il LB è $n log(n)$.
+La complessità computazionale di un \textit{problema} (stavolta non di un specifico algo che lo risolve) è il costo
+dell'algoritmo più efficiente (di minimo costo) che risolve il problema.\\
+L'\textbf{upper bound} (UB) alla complessità di un problema può essere impostato trovando un qualsiasi algoritmo in grado di risolvere correttamente il problema.\\
+Il \textbf{lower bound} (LB) alla complessità di un problema è il minimo costo necessario a qualsiasi algoritmo per risolvere il problema, nel caso peggiore.
+Rappresenta quindi il limite mininimo di operazioni, sempre valutate nel caso peggiore, sotto al quale nessuno è riuscito a scendere nel formulare un algoritmo corretto.
+Dimostrare il LB non è scontato.\\
+E.g. per i problemi di ordinamento il LB è $n log(n)$.
 
 
 \subsection{Classificazione dei Problemi}
-La difficoltà di un problema dipende dal costo dell'algoritmo risolutivo.
-
+La difficoltà nel trattare un problema dipende dalla sua complessità computazione:
 \begin{itemize}
- \item Problemi trattabili: esiste un algo di costo polinomiale
- \item Problemi presumilmente intrattabili: non abbiamo un algo di costo polinomiale ma non è stato dimostrato che non esista
- \item Problemi intrattabili: si può dimostrare non esista un algo di costo polinomiale
- \item Problemi irrisolvibili: si può dimostrare non esiste un algo per il problema (o meglio, esiste con un numero irragionevole di risorse)
+ \item Problemi \textbf{trattabili}: esiste un algo di costo polinomiale.
+ \item Problemi \textbf{presumilmente intrattabili}: non abbiamo un algo di costo polinomiale ma non è stato dimostrato che non esista.
+ \item Problemi \textbf{intrattabili}: si può dimostrare non esista un algo di costo polinomiale.
+ \item Problemi \textbf{irrisolvibili}: si può dimostrare non esiste un algo per il problema.
 \end{itemize}
 
-Il costo polinomiale è stato scelto in quanto rappresenta un costo che permette al problema di essere risolvibile nella realtà.
+Il costo polinomiale è stato scelto in quanto rappresenta un costo che permette al problema di essere risolvibile con le risorse presenti nella realtà.
 La maggior parte dei problemi di costo polinomiale conosciuti hanno un esponente basso.
-I problemi intrattabili possono richiedere un output di dimensione non polinomiale rispetto all'input
-(e.g. generare tutti i numeri rappresentabili con un certo numero di cifre).
 
-La teoria della complessità categorizza i problemi nelle diverse classi.
+I problemi intrattabili possono richiedere un output di dimensione più che polinomiale rispetto all'input
+(e.g. generare tutti i numeri rappresentabili con un certo numero di cifre) o, come nella torre di Hanoi, un numero di mosse più che polinomiale
+(esponenziale) nella dimensione dell'input (il numero di dischi).
 
-Tesi di Curch-Turing (1936): modelli di calcolo diversi sono simulabili a vicenda con slowdown polinomiale.
-Ovvero, sono tutti polinomialmente equivalenti alla Macchina di Turing.
+I problemi irrisolvibili sono quelli per cui è stato dimostrato che non esistono algoritmi risolutivi, come il \href{https://en.wikipedia.org/wiki/Halting_problem}{problema della terminazione} (halting).
 
-La trattazione formale più agevole per trattare alcuni problemi è quella in cui si considerano la variante decisionale del problema.
-Per esempio, il problema dello shortest path ammette la versione di ottimizzazione, in cui dato un grafo e due vertici ci si chiede la
-lunghezza del cammino minima tra i due vertici, e la versione decisionale in cui si aggiunge un valore k e ci si chiede se esista un
-cammino migliore (lunghezza minore o uguale) di k.
-
-\subsection{Teoria della Complessità}
-Possibili soluzioni ai problemi NP hard:
-\begin{itemize}
-  \item applicarli a istanze piccole
-  \item utilizzare euristiche
-  \item utilizzare versioni parallele o distribuite
-  \item utilizzare algoritmi di approssimazione
-\end{itemize}
-
-Le euristiche non mi danno garanzie sull'ottimalità della soluzione, mentre gli algoritmi di approssimazione mi danno garanzie
-sull'upper-bound della soluzione, e.g. la soluzione trovata ha costo al più doppio rispetto all'ottimo.
-
-Dim. TSP è un problema NP-hard
-Come? una soluzione del TSP ci consente di risolvere un altro problema NP-completo
-
-Input:
-G = (V, E) non diretto e completo
-funzione di costo c: E -> R+ che mappa ogni arco ad un costo reale
-
-Ouput: ciclo hamiltoniano (ciclo che attraversi tutti i nodi tornando all'origine) di costo minimo
-
-Scegliamo un problema NP completo tale per cui esiste una conversione di costo polinomiale ad un'istanza di TSP,
-trasformando poi l'output di TSP (il ciclo hamiltoniano) in una risposta decisionale del problema originale (Y/N).
-
---istanza problema NP-completo --> | conversione polinomiale | -> | algo TSP | -> | conversione polinomiale | -> Y/N
-
-ISTANZA
-Scegliamo come problema di input l'esistenza di un \textit{ciclo hamiltoniano (HC)}:
- Input: G = (V, E) non diretto
- Output: Esistenza di un ciclo hamiltoniano in G
-
-CONVERSIONE INPUT
-Mancano due cose: costi e potenzialmente alcuni archi
-La fase di conversione aggiunge archi per renderlo un grafo completo.
-Gli archi aggiunti hanno costo 1, mentre quelli originali 0;
-forziamo il risolutore a schivare gli archi appena aggiunti (più costosi di quelli originali).
-
-COVERSIONE OUTPUT
-Dato un ciclo, possiamo calcolare il costo K del ciclo.
-Il costo K è compreso tra 0 e il minimo tra il numero di nodi aggiunti e il numero di vertici.
-
-L'output è mappato in 0->Y, altrimenti N.
-
-Conclusione: abbiamo così dimostrato che, trovando una soluzione polinomiale ad un problema NP hard, possiamo risolvere
-alti problemi della stessa classe con costo polinomiale.
+La teoria della complessità categorizza i problemi nelle diverse classi. Ma... le classi di questi problemi, dipendono dal modello di calcolo?
+\defbox{Tesi di Curch-Turing (1936): modelli di calcolo diversi sono simulabili a vicenda con slowdown polinomiale.
+Ovvero, tutti i modelli di calcolo sono polinomialmente equivalenti alla Macchina di Turing.}
+Quindi... l'appartenenza alle classi non viene stravolta dal modello di calcolo.

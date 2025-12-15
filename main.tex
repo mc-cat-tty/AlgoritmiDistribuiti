@@ -18,6 +18,26 @@
 \usepackage{multirow}
 \usepackage{graphicx}
 \usepackage{subfiles}
+\usepackage{tcolorbox}
+\tcbuselibrary{theorems}
+
+\newcommand{\defbox}[1]{
+	\begin{tcolorbox}[
+		colback=blue!5!white,
+    colframe=blue!75!black,
+  ]
+  \textbf{Def.}\space\space#1
+  \end{tcolorbox}
+}
+
+\newcommand{\proofbox}[1]{
+	\begin{tcolorbox}[
+		colback=blue!5!white,
+    colframe=blue!75!black,
+  ]
+  \textbf{Def.}\space\space#1
+  \end{tcolorbox}
+}
 
 \title{\textbf{Algoritmi Distribuiti [IT]}}
 \author{Francesco Mecatti}
@@ -34,7 +54,6 @@
 
 \begin{document}
 \clearpage\maketitle\tableofcontents
-\thispagestyle{empty}
 
 \include{theory/1-introduction.tex}
 \end{document}
