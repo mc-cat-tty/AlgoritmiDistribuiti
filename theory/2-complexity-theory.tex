@@ -1,0 +1,109 @@
+\section{Teoria della Complessità}
+\subsection{Problemi Decisionali}
+La trattazione formale più agevole per trattare alcuni problemi è quella in cui si considera la variante \textbf{decisionale} del problema.\\
+Ad esempio, il problema dello shortest path ammette la versione di ottimizzazione, in cui dato un grafo e due vertici ci si chiede la
+lunghezza del cammino minima tra i due vertici, e la versione decisionale in cui si aggiunge all'input un valore $k$ e ci si chiede se esista un
+cammino migliore (lunghezza minore o uguale) di $k$.
+
+\subsection{Teoria della Complessità}
+\defbox{Problemi P: insieme dei problemi decisionali risolvibili con un algoritmo di costo temporale polinomiale nella dimensione dell'input.}
+
+Il problema del \textit{ciclo emiltoniano} è un problema per il quale non esiste un algoritmo noto di costo polinomiale, ma per il quale la
+\textbf{verifica} di una soluzione (ad esempio sotto forma di permutazione dei nodi) richiede un tempo polinomiale.
+
+\defbox{Certificato per una istanza positiva $i$ del problema $\Pi$: sequenza di caratteri aggiuntiva (rispetto all'output), di dimensione al
+massimo polinomiale nella dimensione dell'input, che contiene l'evidenza che $i$ sia una istanza positiva (ovvero per cui l'algoritmo risolutore
+ritorna "\textit{yes}") per $\Pi$.}
+
+\defbox{Algoritmo verificatore: algoritmo decisionale che prende in input $i$, istanza di un problema decisionale $\Pi$, e una sequenza di
+caratteri $C_i$; tale algoritmo restitusce "\textit{yes}" se $i$ è un'istanza positiva per $\Pi$, "\textit{no}" altrimenti.}
+
+Se un algoritmo verificatore restituisce "\textit{yes}", allora $C_i$ è un certificato per $i$; se la risposta è "\textit{no}", sicuramente
+$C_i$ non è un certificato per $i$, ma potrebbe comunque esistere un certificato per l'istanza.
+
+\defbox{Verificabilità. Un problema è verificabile se:
+  \begin{itemize}
+    \item per ogni istanza positiva $i$ di $\Pi$, esiste un certificato $C_i$ (polinomiale nell'input)
+    \item esiste un algoritmo verificatore $A$ che risponde "\textit{yes}" per ogni coppia $(i, C_i)$ tale che $i$ è istanza positiva di $\Pi$
+  \end{itemize}
+}
+
+\defbox{Problemi Non-deterministic Polynomial-time (NP): classe di problemi decisionali che possono essere verificati con un algoritmo verificatore
+di costo temporale polinomiale.}
+
+\theobox{
+$\mathit{P} \subseteq  \mathit{NP}$.
+
+\proofbox{
+Dato un problema $\Pi \in P$, esiste un algoritmo $A$ di costo polinomiale che può essere utilizzato come verificatore, passandogli come
+certificato la stringa vuota, e coincide proprio con l'algoritmo risolutore: l'algoritmo verificatore invoca l'algoritmo risolutore
+$A$ per $\Pi$ su un'istanza del problema e restituisce il risultato. Se l'istanza è positiva il risultato è "\textit{yes}", altrimenti "\textit{no}".
+}}
+
+A questo punto ci chiediamo la seguente cosa: i problemi P sono solamente un caso particolare degli NP o le due classi coincidono ($P = \mathit{NP}$)?\\
+Dato che ci sono problemi NP che sembrano più difficili di problemi P, è ragionevole pensare che tali problemi risiedano in $NP \setminus P$.
+
+Cerchiamo ora di caratterizzare i problemi in NP che sembrano più difficili dei problemi P.
+Introduciamo l'operatore $\leq_p$. Dati due problemi $A$ e $B$, $A \leq_p B$ significa che $B$ non è più facile di $A$ o, al dalla prospettiva
+opposta, che $A$ non è più difficile di $B$.
+
+\defbox{Riduzione di Karp. Dati due problemi decisionali $A$ e $B$ tali che $A \leq_p B$. $A$ è riconducibile in tempo
+polinomiale a $B$ se ogni istanza di $A$ può essere trasformata in tempo polinomiale in un'istanza di $B$, mantenendo la natura dell'istanza:
+se era positiva per $A$, deve essere positiva anche per $B$; se era negativa per $B$, deve rimanerlo anche per $B$.}
+
+Nota che siccome un algoritmo risolutivo per $B$ può essere usato per risolvere $A$, è naturale che $A \leq_p B$, ovvero che l'algoritmo risolutivo
+più "potente" riesca a risolvere anche un problema più facile.\\
+Osservazioni su $A \leq_p B$:
+\begin{itemize}
+  \item se $B \in P \Rightarrow A \in P$. L'algoritmo polinomiale per $B$ può essere adattato ad $A$ mediante la riduzione
+  \item se $A \notin P \Rightarrow B \notin P$. Se $B \in P$ avremmo un algoritmo polinomiale anche per $A$, dall'oss. sopra
+  \item se $A \in P$ non deduciamo niente su $B$
+  \item se $B \notin P$ non deduciamo niente su $A$
+  \item se $B \leq_p A \Rightarrow A \equiv B$
+  \item se $B \leq_p C \Rightarrow A \leq_p C$ per transitività. Ci serviranno due riduzioni polinomiali al posto di una per adattare $A$ a $C$
+\end{itemize}
+
+% Possibili soluzioni ai problemi NP hard:
+% \begin{itemize}
+%   \item applicarli a istanze piccole
+%   \item utilizzare euristiche
+%   \item utilizzare versioni parallele o distribuite
+%   \item utilizzare algoritmi di approssimazione
+% \end{itemize}
+
+% Le euristiche non mi danno garanzie sull'ottimalità della soluzione, mentre gli algoritmi di approssimazione mi danno garanzie
+% sull'upper-bound della soluzione, e.g. la soluzione trovata ha costo al più doppio rispetto all'ottimo.
+
+% Dim. TSP è un problema NP-hard
+% Come? una soluzione del TSP ci consente di risolvere un altro problema NP-completo
+
+% Input:
+% G = (V, E) non diretto e completo
+% funzione di costo c: E -> R+ che mappa ogni arco ad un costo reale
+
+% Ouput: ciclo hamiltoniano (ciclo che attraversi tutti i nodi tornando all'origine) di costo minimo
+
+% Scegliamo un problema NP completo tale per cui esiste una conversione di costo polinomiale ad un'istanza di TSP,
+% trasformando poi l'output di TSP (il ciclo hamiltoniano) in una risposta decisionale del problema originale (Y/N).
+
+% --istanza problema NP-completo --> | conversione polinomiale | -> | algo TSP | -> | conversione polinomiale | -> Y/N
+
+% ISTANZA
+% Scegliamo come problema di input l'esistenza di un \textit{ciclo hamiltoniano (HC)}:
+%  Input: G = (V, E) non diretto
+%  Output: Esistenza di un ciclo hamiltoniano in G
+
+% CONVERSIONE INPUT
+% Mancano due cose: costi e potenzialmente alcuni archi
+% La fase di conversione aggiunge archi per renderlo un grafo completo.
+% Gli archi aggiunti hanno costo 1, mentre quelli originali 0;
+% forziamo il risolutore a schivare gli archi appena aggiunti (più costosi di quelli originali).
+
+% COVERSIONE OUTPUT
+% Dato un ciclo, possiamo calcolare il costo K del ciclo.
+% Il costo K è compreso tra 0 e il minimo tra il numero di nodi aggiunti e il numero di vertici.
+
+% L'output è mappato in 0->Y, altrimenti N.
+
+% Conclusione: abbiamo così dimostrato che, trovando una soluzione polinomiale ad un problema NP hard, possiamo risolvere
+% alti problemi della stessa classe con costo polinomiale.

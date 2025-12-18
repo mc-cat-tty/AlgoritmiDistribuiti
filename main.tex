@@ -26,16 +26,25 @@
 		colback=blue!5!white,
     colframe=blue!75!black,
   ]
-  \textbf{Def.}\space\space#1
+  \textbf{Def.}\space#1
+  \end{tcolorbox}
+}
+
+\newcommand{\theobox}[1]{
+	\begin{tcolorbox}[
+		colback=blue!5!white,
+    colframe=blue!75!black,
+  ]
+  \textbf{Teo.}\space#1
   \end{tcolorbox}
 }
 
 \newcommand{\proofbox}[1]{
 	\begin{tcolorbox}[
-		colback=blue!5!white,
-    colframe=blue!75!black,
+		colback=cyan!5!white,
+    colframe=cyan!75!black,
   ]
-  \textbf{Def.}\space\space#1
+  \textbf{Dim.}\space#1
   \end{tcolorbox}
 }
 
@@ -48,7 +57,7 @@
 {\Huge \bfseries \sffamily \@title }\\[4ex] 
 {\Large  \@author}\\[4ex] 
 \@date\\[8ex]
-\includegraphics[width = 40mm]{imgs/ai-free.png}
+\includegraphics[width=40mm]{imgs/ai-free.png}
 \end{center}}
 \makeatother
 
@@ -56,4 +65,5 @@
 \clearpage\maketitle\tableofcontents
 
 \include{theory/1-introduction.tex}
+\include{theory/2-complexity-theory.tex}
 \end{document}
