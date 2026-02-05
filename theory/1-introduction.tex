@@ -10,8 +10,8 @@ Ciò che vogliamo risolvere, generalizzando il più possibile. Chiamiamo i gener
 Un'istanza di un problema si ottiene assegnando valori specifici ai parametri.\\
 I problemi possono essere classificati in 3 categorie, in base al tipo di soluzione cercata:
 \begin{itemize}
-  \item Problemi \textbf{decisionali}: output Yes/No
-  \item Problemi di \textbf{ricerca}: si cerca una \textit{soluzione ammissibile} (ammissibile = che soddisfa una proprietà)
+  \item Problemi \textbf{decisionali}: output Yes/No a seconda che l'input soddisfi o meno una determinata proprietà.
+  \item Problemi di \textbf{ricerca}: si cerca una \textit{soluzione ammissibile} (ammissibile = che soddisfa una certa condizione)
   tra tutte le possibili soluzioni.
   \item Problemi di \textbf{ottimizzazione}: ad ogni soluzione ammissibile è associato un costo; si cerca la \textit{soluzione ottima},
   ovvero quella che massimizza o minimizza tale costo, espresso da una \textit{funzione obiettivo}.
@@ -19,13 +19,14 @@ I problemi possono essere classificati in 3 categorie, in base al tipo di soluzi
 
 \subsection{Algoritmi}
 \defbox{Un \textbf{algoritmo} è una procedura generale per risolvere un problema, con le seguenti caratteristiche:
-sequenza finita di passi (altrimenti il codice sorgente non sarebbe finito), non ambigua,
+sequenza finita di passi (altrimenti il codice sorgente non sarebbe finito), ordinata, non ambigua,
 effettivamente realizzabile (e.g. no divisioni per zero), in grado di terminare in tempo finito (e.g., no cicli infiniti).
 L'algoritmo deve sempre ritornare un risultato che appartiene all'insieme delle soluzioni;
 una soluzione può essere anche un errore. (D. Knuth)
 }
 
 Cerchiamo algoritmi \textbf{corretti} per un dato problema.
+Un algoritmo corretto ritorna sempre la soluzione corrispondente per ogni istanza di input.
 Un algoritmo non corretto potrebbe non terminare o non ritornare un risultato corretto.
 
 Gli algoritmi \textbf{efficienti} usano poche risorse in termini di spazio e tempo.
@@ -41,34 +42,36 @@ Nel \textbf{costo logaritmico} la dimensione dipende dal numero di bit necessari
 E.g. algo di fattorizzazione: sempre 1 solo elemento di input, ma più è grande più sarà lenta la fattorizzazione.\\
 Nel \textbf{costo uniforme} la dimensione dipende dal numero di elementi necessari per rappresentare l'input.
 
+Il costo computazionale \textbf{worst case} di un \textit{algoritmo} è il numero di operazioni elementari necessarie per risolvere
+il problema su qualunque istanza, compresa la peggiore.\\ 
 La complessità computazionale di un \textit{problema} (stavolta non di un specifico algo che lo risolve) è il costo
 dell'algoritmo più efficiente (di minimo costo) che risolve il problema.\\
 L'\textbf{upper bound} (UB) alla complessità di un problema può essere impostato trovando un qualsiasi algoritmo in grado di risolvere correttamente il problema.\\
 Il \textbf{lower bound} (LB) alla complessità di un problema è il minimo costo necessario a qualsiasi algoritmo per risolvere il problema, nel caso peggiore.
 Rappresenta quindi il limite mininimo di operazioni, sempre valutate nel caso peggiore, sotto al quale nessuno è riuscito a scendere nel formulare un algoritmo corretto.
 Dimostrare il LB non è scontato.\\
-E.g. per i problemi di ordinamento il LB è $n log(n)$.
+E.g. per i problemi di ordinamento il LB è $n \log(n)$.
 
 
 \subsection{Classificazione dei Problemi}
-La difficoltà nel trattare un problema dipende dalla sua complessità computazione:
+La difficoltà nel trattare un problema dipende dalla sua complessità computazionale:
 \begin{itemize}
  \item Problemi \textbf{trattabili}: esiste un algo di costo polinomiale.
  \item Problemi \textbf{presumilmente intrattabili}: non abbiamo un algo di costo polinomiale ma non è stato dimostrato che non esista.
  \item Problemi \textbf{intrattabili}: si può dimostrare non esista un algo di costo polinomiale.
- \item Problemi \textbf{irrisolvibili}: si può dimostrare non esiste un algo per il problema.
+ \item Problemi \textbf{irrisolvibili}: si può dimostrare che non esiste un algo per il problema.
 \end{itemize}
 
 Il costo polinomiale è stato scelto in quanto rappresenta un costo che permette al problema di essere risolvibile con le risorse presenti nella realtà.
 La maggior parte dei problemi di costo polinomiale conosciuti hanno un esponente basso.
 
-I problemi intrattabili possono richiedere un output di dimensione più che polinomiale rispetto all'input
+I problemi chiaramente intrattabili sono, ad esempio, quelli che richiedono un output di dimensione più che polinomiale rispetto all'input
 (e.g. generare tutti i numeri rappresentabili con un certo numero di cifre) o, come nella torre di Hanoi, un numero di mosse più che polinomiale
-(esponenziale) nella dimensione dell'input (il numero di dischi).
+(esponenziale) nella dimensione dell'input (ovvero il numero di dischi presenti).
 
 I problemi irrisolvibili sono quelli per cui è stato dimostrato che non esistono algoritmi risolutivi, come il \href{https://en.wikipedia.org/wiki/Halting_problem}{problema della terminazione} (halting).
 
-La teoria della complessità categorizza i problemi nelle diverse classi. Ma... le classi di questi problemi, dipendono dal modello di calcolo?
+La teoria della complessità categorizza i problemi nelle diverse classi. Ma\dots le classi di questi problemi, dipendono dal modello di calcolo?
 \theobox{Tesi di Curch-Turing (1936): modelli di calcolo diversi sono simulabili a vicenda con slowdown polinomiale.
 Ovvero, tutti i modelli di calcolo sono polinomialmente equivalenti alla Macchina di Turing.}
-Quindi... l'appartenenza alle classi non viene stravolta dal modello di calcolo.
+Quindi\dots l'appartenenza alle classi non viene stravolta dal \textbf{modello di calcolo}.
