@@ -1,5 +1,6 @@
 \documentclass[12pt,english]{article}
 
+
 \usepackage[final]{style}
 \usepackage[utf8]{inputenc} % allow utf-8 input
 \usepackage[T1]{fontenc}    % use 8-bit T1 fonts
@@ -19,7 +20,21 @@
 \usepackage{graphicx}
 \usepackage{subfiles}
 \usepackage{tcolorbox}
+\usepackage{cleveref}
+\usepackage{listings}
+\usepackage{fancyvrb}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+\newcommand{\Var}[1]{\mathbf{#1}}
+\newcommand{\CommentColor}[1]{\textcolor{teal}{#1}}
+\renewcommand{\algorithmiccomment}[1]{\hfill \CommentColor{$\triangleright$ #1}}
+
 \tcbuselibrary{theorems}
+\lstset{
+  basicstyle=\ttfamily,
+  mathescape
+}
 
 \newcommand{\defbox}[1]{
 	\begin{tcolorbox}[
@@ -35,7 +50,7 @@
 		colback=blue!5!white,
     colframe=blue!75!black,
   ]
-  \textbf{Teo.}\space#1
+  \textbf{Theo.}\space#1
   \end{tcolorbox}
 }
 
@@ -44,7 +59,16 @@
 		colback=cyan!5!white,
     colframe=cyan!75!black,
   ]
-  \textbf{Dim.}\space#1
+  \textbf{Proof.}\space#1
+  \end{tcolorbox}
+}
+
+\newcommand{\obsbox}[1]{
+	\begin{tcolorbox}[
+		colback=green!5!white,
+    colframe=green!75!black,
+  ]
+  \textbf{Observ.}\space#1
   \end{tcolorbox}
 }
 
@@ -57,7 +81,9 @@
 {\Huge \bfseries \sffamily \@title }\\[4ex] 
 {\Large  \@author}\\[4ex] 
 \@date\\[8ex]
-\includegraphics[width=40mm]{imgs/ai-free.png}
+\includegraphics[width=40mm]{imgs/ai-free.png}\\[8ex]
+{View sources at \href{https://github.com/mc-cat-tty/AlgoritmiDistribuiti}{this link}}\\
+{Report any errors or suggest improvements via \href{https://github.com/mc-cat-tty/AlgoritmiDistribuiti/issues}{this link}}\\[8ex]
 \end{center}}
 \makeatother
 
@@ -65,5 +91,5 @@
 \clearpage\maketitle\tableofcontents
 
 \include{theory/1-introduction.tex}
-\include{theory/2-complexity-theory.tex}
+% \include{theory/2-complexity-theory.tex}
 \end{document}
