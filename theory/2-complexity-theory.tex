@@ -125,30 +125,29 @@ soluzione ottima.
   \textbf{TSP è un problema NP-hard}.\\
   Come lo dimostriamo? una soluzione del TSP ci consente di risolvere un altro problema NP-completo, il problema del ciclo hamiltoniano (HC)
   nella sua forma decisionale, attraverso una riduzione polinomiale.
-
+  \newline \newline
   Piano: prendiamo un'istanza del problema NP-completo HC, corventiamola in un'istanza di TSP in tempo polinomiale,
-  risolviamo TSP, trasformiamo infine l'output di TSP in una risposta decisionale del problema originale.
-
-  \begin{verbatim}
-  istanza HC --> | conversione polinomiale | -> | algo TSP | -> | conversione polinomiale | -> Y/N
-  \end{verbatim}
-
+  risolviamo TSP, trasformiamo infine l'output di TSP in una risposta decisionale del problema originale:\\
+\texttt{
+istanza HC -> |poly.\ conv.| -> |TSP solv.| -> |poly.\ conv.| -> Y/N
+}
+  \newline \newline
   Input HC: $G = (V, E)$ non diretto.\\
   Ouput HC: esiste un ciclo hamiltoniano (ciclo che attraversi tutti i nodi tornando all'origine)?
-  
+  \newline \newline
   Input TSP: $G = (V, E)$ non diretto e completo e una funzione di costo $c: E \rightarrow R^+$ che mappa ogni arco ad un costo reale.\\
   Output TSP: ciclo hamiltoniano di costo minimo.
-  
+  \newline \newline
   CONVERSIONE INPUT\\
   Mancano due cose: costi e potenzialmente alcuni archi.
   La fase di conversione aggiunge archi per renderlo un grafo completo.
   Gli archi aggiunti $\tilde{E}$ hanno costo 1, mentre quelli originali $E$ hanno costo 0;
   forziamo il risolutore a schivare gli archi appena aggiunti (più costosi di quelli originali).
-
+  \newline \newline
   COVERSIONE OUTPUT\\
   Dato un ciclo, possiamo calcolare il costo K del ciclo: $0 \leq K \leq \min(|V|, |\tilde{E}|)$
   L'output è Y se $K=0$, altrimenti N.
-
+  \newline \newline
   Conclusione: abbiamo così dimostrato che, trovando una soluzione ad HC (problema NP-completo) tramite TSP,
   il problema TSP è NP-hard (nota come non abbiamo fatto assunzioni sull'algoritmo verificatore).
 }

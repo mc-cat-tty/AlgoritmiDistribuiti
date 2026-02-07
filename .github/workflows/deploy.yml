@@ -20,6 +20,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+      - name: Update apt
+        run: sudo apt update
       - name: Install dependencies
         run: sudo apt install -y texlive-latex-base texlive-latex-extra texlive-fonts-recommended texlive-science
       - name: Compile PDF
