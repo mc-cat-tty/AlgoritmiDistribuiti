@@ -1,16 +1,353 @@
 \section{Algoritmi di Approssimazione}
-\subsection{Fattore di Approssimazione}
-Def. Fattore di di approssimazione $\alpha \geq 1$.
-$\forall \text{istanza del problema} \frac{cost_approx(I)}{cost_opt(I)} \leq \alpha$
+\subsection{Motivazione}
+Come abbiamo visto, i problemi NP-completi sono impratici da trattare cercando una soluzione ottimale,
+ma allo stesso tempo, troppo importanti per essere abbandonati.
 
-I.e., la soluzione approssimata ricade nella finestra delimitata dal costo approssimato e alpha volte il costo approssimato.
+Abbiamo tre alternative.
+Prima, per input piccoli costi elevati (ad esempio esponenziali) non sono un problema.
+Seconda, possiamo individuare casi speciali del problema e risolverli in tempo polinomiale.
+Terza alternativa, possiamo cercare soluzioni pseudo-ottimali invece che ottime, usando algoritmi approssimati
+che seguano in tempo polinomiale (nel caso peggiore o nel caso d'uso comune).
+
+\subsection{Fattore di Approssimazione}
+Supponiamo di lavorare su un problema di ottimizzazione in cui, ad ogni soluzione, è associato un costo positivo $C$.
+Vogliamo trovare una soluzione pseudo-ottimale attraverso un algoritmo di ottimizzazione.
+Il punto di riferimento che abbiamo, per valutare la qualità della soluzione approssimata, è il costo della soluzione ottimale.
+
+Il costo della soluzione ottimale può essere il più alto tra i possibili costi, se si tratta di un problema di massimizzazione, o
+un il più basso tra essi, se si tratta di un problema di minimizzazione.
+
+\defbox{
+  Il fattore di approssimazione (\textit{performance ratio}) di un algoritmo approssimato di minimizzazione è $\alpha \geq 1$ tale che,
+  $\forall I \ \text{istanza del problema} \  \frac{C_\text{approx}(I)}{C_\text{opt}(I)} \leq \alpha$
+}
+
+Ovvero, la soluzione approssimata ricade nella finestra delimitata dal costo ottimale e alpha volte il costo ottimale:
+$$
+\forall I \quad 0 \leq C_\text{opt}(I) \leq C_\text{approx}(I) \leq \alpha C_\text{opt}(I)
+$$
 Abbiamo così determinato un upper bound al costo della soluzione approssimata.
 
-\subsection{Algoritmo di Christofides per TSP}
-Esiste un risultato secondo cui il fattore di approssimazione per un algoritmo di approssimazione di TSP non è costante,
-ammesso che $P \neq NP$. Un fattore di approssimazione variabile, dipendente dal numero di veritici, è sostanzialmente inutile.
-Questo è vero per istanze generiche del problema; ammettendo una restrizione del problema originale
-possiamo trovare algoritmi con fattori di approssimazione costanti.
+Conosciamo molti problemi per cui abbiamo algoritmi di approssimazione polinomiale, con $\alpha$ basso;
+mentre per altri problemi i migliori algoritmi di approssimazione polinomiale hanno un $\alpha$ proporzionale alla
+dimensione dell'input.
+
+Extra: vedi gli \textbf{schemi di approssimazione} per problemi di ottimizzazione, algoritmi che introducono all'input del problema
+un valore $\epsilon$ di tolleranza da cui dipende il costo computazionale dell'algoritmo.
+
+\subsection{Vertex Cover}
+\defbox{
+  Il \textbf{Vertex Cover} è un sottoinsieme di vertici $V' \subseteq V$ tale che tutti gli archi siano
+  coperti: $\forall (u, v) \in E \ | \ u \in V' \ \text{or} \ v \in V'$.
+}
+
+\defbox{
+  \textbf{Vertex Cover di costo minimo} (o vertex cover ottimo): vertex cover di minima cardialità (minimo numero di nodi in $V'$).
+  Problema NP-hard.
+}
+
+Input: G = (V, E) non diretto (nessun vincolo sulla completezza).\\
+Output: vertex cover di costo minimo.
+
+Esempio: coprire con il numero minimo di telecamere tutte le strade di un grafo.
+
+\proofbox{
+  \textbf{Il problema del Vertex Cover, nella sua formulazione di ottimizzazione, è NP-hard}.\\
+  Formuliamo la versione decisionale del Vertex Cover (VCD), problema notoriamente \textbf{NP-completo}:
+  \begin{itemize}
+    \item INPUT: $G = \{V, E\} \quad k \leq |V|, \ k \in \mathbb{R}$
+    \item OUTPUT: esiste un VC di cardinalità $\leq k$? Y/N
+  \end{itemize}
+
+  Dimostriamo come, con una riduzione di tempo polinomiale, si possa passare risolvere VCD con VC: $\textit{VCD} \leq_p \textit{VC}$.
+  \begin{itemize}
+    \item Si utilizza il risolutore di VC su $G$ per trovare $V' \subseteq V$ di cardinalità minima
+    \item Se $|V'| \leq k$ si ritorna Y, altrimenti N
+  \end{itemize}
+}
+
+\subsubsection{Greedy Vertex Cover 1}
+Una prima soluzione greedy potrebbe essere quella di scegliere un nodo alla volta, eliminando man mano gli archi coperti,
+finchè non si arriva alla copertura completa.
+
+Un diagramma a stella dimostra che la soluzione approssimata, non solo si discosta molto da quella ottima, ma non ha un
+fattore di approssimazione costante:
+\begin{verbatim}
+cost(OPT) = 1       # Il nodo al centro viene scelto come primo e unico nodo
+cost(APPROX) = n-1  # Vengono scelti tutti i nodi esterni
+\end{verbatim}
+
+Alternativamente, si potrebbe pensare di selezionare i nodi in base al loro grado: consumando prima i nodi di grado più alto.
+Tuttavia, sebbene nel caso del grafo a stella questo algoritmo trova la soluzione ottima, anche in questo caso il fattore di approssimazione
+non è costante.
+
+\subsubsection{Greedy Vertex Cover 2}
+Un'alternativa, sempre di natura \textbf{greedy}, consiste nel selezionare man mano gli archi, inserendo i vertici su cui incidono nel VC.
+\begin{algorithm}
+  \caption{Approximated (Greedy) VC($\{E, V\}$)}
+  \begin{algorithmic}[1]
+  \State $C = \emptyset$
+  \State $E' = E$
+  \While{$E \neq \emptyset$}
+    \State scegli $\{u, v\} \in E'$ arbitrariamente
+    \State $C = C \cup \{u, v\}$
+    \State elimina da $E'$ gli archi incidenti su $u$ e $v$
+  \EndWhile
+  \State \Return $C$
+  \end{algorithmic}
+\end{algorithm}
+
+\textbf{Costo polinomiale}: nel caso peggiore visito tutti gli archi.\\
+Terminazione assicurata dal fatto che ad ogni iterazione almeno l'arco $\{u, v\}$ viene eliminato.
+
+Il vertex cover ritornato è sempre di cardinalità pari, dato che per ogni arco vengono aggiunti due nodi e tutti i nodi
+incidenti venogno eliminati (per cui non si può verificare che, ad una iterazione, uno dei nodi aggiunti in $C$ sia già
+presente in tale insieme).
+Definito $\tilde{E} \subseteq E$, insieme degli archi selezionati durante l'esecuzione, sappiamo che $|C| = 2 |\tilde{E}|$.
+
+\proofbox{
+  \textbf{Questo algoritmo ritorna un vertex cover di dimensione al massimo doppio rispetto al cover ottimo}.
+  \newline \newline
+  Lower Bound: dati $\tilde{E}$ archi disgiunti, selezionati dall'algoritmo durante l'esecuzione,
+  serve almeno un nodo per arco per raggiungere la copertura completa; anche la soluzione ottimale $C^*$ non può fare meglio di così,
+  quindi $|\tilde{E}| \leq |C^*|$.
+  \newline \newline
+  Inoltre, come citato sopra $|C| = 2 |\tilde{E}|$.
+  \newline \newline
+  Upper Bound: combinando le due uguaglianze $|C| = 2 |\tilde{E}| \leq 2 |C^*|$, applicando la proprietà transitiva abbiamo che $|C| \leq 2 |C^*|$;
+  quindi $\alpha = 2$
+}
+
+Si può dimostrare che l'UB è tight (ovvero, che il coefficiente di approssimazione stimato sopra è il più basso possible) con la famiglia di grafi a stella.
+Per questa famiglia di grafi il costo ottimo è 1, mentre il costo approssimato è 2, dimostrando così che il coefficiente di approssimazione
+scelto è necessario e non può essere abbassato ulteriormente.
+
+\subsubsection{ILP Vertex Cover}
+Cerchiamo di migliorare il coefficiente di approssimazione dell'algoritmo precedente usando la \textbf{programmazione lineare intera}
+(Integer Linear Programming --- ILP).
+
+Usiamo la tecnica generica del \textbf{Relax and Round}:
+\begin{itemize}
+  \item formuliamo il problema del Vertex Cover seguendo il framework della \textbf{programmazione lineare intera}:
+  \begin{align*}
+  & \forall v \in V \ : \ x_v = 0 \ \text{se} \ v \notin \textit{VC}, 1 \text{ altrimenti} \tag{Variabili decisionali binarie}\\
+  & \min \sum_{v \in V} x_v \tag{Funzione Obiettivo} \\
+  & \text{s.t.} \quad x_v + x_u \geq 1 \quad \forall (u, v) \in E \tag{Vincolo di almeno un nodo per arco} \\
+  & \quad\quad\ x_v \in \{0, 1\} \quad \forall v \in V \tag{Vincolo di interezza} \\
+  \end{align*}
+
+  Aka:
+  \begin{itemize}
+    \item per ogni vertice associamo una variabile booleana che rapprsenta se il vertice viene scelto come appartenente al vertex cover
+    (da qui l'interezza).
+    \item vogliamo scegliere il numero minimo di vertici.
+    \item almeno uno tra i due vertici incidenti sullo stesso arco deve essere scelto.
+  \end{itemize}
+
+  \item posso dare questa formulazione in pasto ad un solver? no, anche la ILP è un problema NP-hard.
+
+  Per questo motivo \textbf{rilassiamo} il vincolo di interezza per rendre la ricerca di una soluzione ottimale più facile:
+  il nuovo problema di \textbf{programmazione lineare} (linear programming --- LP) ammette $x_v \in [0, 1] \quad \forall v \in V$, intervallo continuo.
+
+  \item passiamo alla fase di \textbf{rounding}: trasformiamo la soluzione da continua ad intera.
+  Dato il risultato ottimo di LP $x_v^* \in [0, 1]$ vogliamo trasformarlo in $\hat{x}_v \in \{0, 1\}$:
+  \begin{equation*}
+    \hat{x}_v =
+    \begin{cases}
+      0 \ \text{se} \ x_v^* < 0.5\\
+      1 \ \text{se} \ x_v^* \geq 0.5
+    \end{cases}
+  \end{equation*}
+
+  Scegliamo 1 (e non 0) se il $x_v^*$ è 0.5 (ovvero pari al valore ``spartiacque'') perchè, se scegliessimo 0,
+  la soluzione potrebbe non essere un cover.\\
+  E.g., quando due vertici connessi da un arco hanno entrambi costo 0.5: in questo caso il vincolo di somma maggiore o uguale a 1 è rispettato,
+  ma se l'arrotondamento di 0.5 venisse fatto a 0, nessuno dei due verrebbe preso.
+
+  Da una prospettiva diversa: negli algoritmi di approssimazione scendiamo a compromessi sul costo del'algoritmo, mai sulla correttezza
+  della soluzione (in questo caso il fatto che il VC debba essere completo).
+
+  \item il VC \textbf{approssimato} è l'insieme $\{ v \in V \ | \ \hat{x}_v = 1 \}$. Sicuramente è un VC in quanto, essendo partiti dalla soluzione $x^*$ soggetta
+  al vincolo di somma maggiore di 1, abbiamo che per ogni arco sceglieremo almeno un vertice incidente. La somma di due numeri non può
+  essere almeno 1 con entrambi i valori sotto a 0.5.
+\end{itemize}
+
+Analizziamo ora il \textbf{costo}.
+
+\obsbox{
+  dato lo spazio delle soluzioni LP, le soluzioni ILP sono un suo sottoinsieme.\\
+  % TODO: diagramma di Eulero-Venn
+  La soluzione ottima del problema originale, se si trova nel sottoinsieme ILP, allora è ottima per entrambi; le soluzioni ottime coincidono.\\
+  Se la soluzione ottima si trova in LP, ma non in ILP, allora il suo costo in LP sarà minore del costo in ILP,
+  siccome la formulazione LP ha vincoli più lassi della controparte ILP.
+}
+
+Cerchiamo una relazione tra il costo della soluzione ottima e il costo della soluzione frazionaria (in LP).
+Dato $C_\text{OPT} = C_\text{ILP}$ costo della soluzione ottima, ottenuta risolvendo la formulazione ILP iniziale del problema, e $C_\text{LP} = \sum_{v \in V} x_v^*$.
+Per quanto presente nell'osservazione, stanno nella relazione $C_\text{OPT} \geq C_\text{LP}$ (in generale, relazione sempre valida per rilassamenti in LP).
+Nota che la soluzione in ILP è ammissibile e ottima.
+
+Ora cerchiamo di mettere in relazione il costo della soluzione approssimata, ottenuta dopo il rounding,
+$C_\text{APPROX} = \sum_{v \in V} x_v^*$ e il costo della soluzione frazionaria $C_\text{LP}$.\\
+Per costruzione abbiamo la maggiorazione:
+$$\hat{x}_v \leq 2 x_v^* \quad \forall v \in V$$
+
+Verifica di correttezza:
+\begin{itemize}
+  \item se $\hat{x}_v = 0 \Rightarrow 0 \leq x_v^* < 0.5$
+  \item se $\hat{x}_v = 1 \Rightarrow 0.5 \leq x_v^* \leq 1$
+\end{itemize}
+
+Passiamo alla sommatoria sui vertici $v \in V$ mantenendo la relazione:
+$$
+C_\text{APPROX} = \sum_{v \in V} \hat{x}_v \quad \leq \quad 2 \sum_{v \in V} x_v^* = C_\text{LP}
+$$
+
+Mettendo insieme la catena di disequazioni:
+$$
+C_\text{APPROX} \leq 2 C_\text{LP} \leq 2 C_\text{OPT}
+\quad \Rightarrow \quad \frac{C_\text{APPROX}}{C_\text{OPT}} \leq 2
+$$
+
+Analisi tight? sì, dimostrabile con l'esempio di un grafo ad anello con numero pari di nodi $n$ (ad esempio, ottenuto congiungendo i vertici di un
+quadrato): la soluzione frazionaria è $x_v = 0.5 \quad \forall v \in V$, con conseguente inserimento di tutti i vertici nel cover, mentre
+la soluzione ottimale sceglierebbe solamente metà dei vertici, prendendone uno sì e uno no.
+$C_\text{APPROX} = n, C_\text{OPT} = n/2$ (numero pari di nodi scelto per poter dividere senza resto).
+
+In più, non si può fare meglio di $n/2$\dots il grafo è composto da $n/2$ archi disgiunti e ognuno deve essere coperto da un vertice, quindi almeno $n/2$
+sono necessari.
+Per dimostrare che la soluzione frazionaria assegnerebbe $0.5$ ad ogni nodo, guardiamo i vincoli: la somma dei pesi associati ai vertici di
+ogni arco deve essere almeno 1 e cerchiamo l'assegnamento con costo minimo; abbiamo $n/2$ archi disginti; la configurazione più conveniente
+è quella in cui viene assegnato $0.5$ ai capi degli archi disgiunti, ovvero ad ogni vertice.
+
+Conclusione: non è noto nessun algoritmo di approssimazione per il Vertex Cover che abbia un fattore di approssimazione migliore di due, e non
+è noto se si riesca a fare meglio di così.
+
+Extra: materiale su \textbf{branch-and-bound}
+
+\subsection{Travelling Salesman Problem}
+Nel problema del commesso viaggiatore (Travelling Salesman Problem --- TSP) riceviamo in input un grafo \textbf{completo e non diretto}
+$G = \{V, E\}$ con archi \textbf{pesati} da un costo intero non-negativo $c(u, v) \quad \forall (u, v) \in E$ e ci è richiesto di trovare
+il \textbf{ciclo hamiltoniano di costo minore}.
+
+Ma che cos'è un ciclo hamiltoniano? dato un grafo non diretto $G$ (generico),
+un \textbf{ciclo hamiltoniano} è un cammino chiuso che passa una volta sola per \textbf{tutti}
+i nodi del grafo.
+
+Nella sua variante decisionale del problema, ci chiediamo semplicemente se, dato il grafo,
+esista un ciclo hamiltoninao in $G$. Questo problema è NP-completo.
+Ci sono famiglie di grafi per cui questo problema è polinomiale: per i grafi aciclici (e.g. alberi), tale ciclo non esiste mai, mentre
+per grafi completi, tale ciclo esiste sempre (anzi, ne esistono molteplici).
+
+Nella formulazione del TSP rendiamo ``difficile'' questo problema rendendolo un problema di ottimizzazione; infatti, richiediamo
+che il ciclo trovato sia di costo minimo.
+
+\theobox{
+  Non esiste un algoritmo di approssimazione polinomiale con fattore di approssimazione costante per TSP, a meno che $P=NP$.
+  \obsbox{ Il teorema implica ovviamente che non è neanche possibile trovare un algoritmo polinomiale esatto per TSP. }
+  \proofbox {
+    Dimostrazione per assurdo: supponiamo che un oracolo ci fornisca un algoritmo approssimato $\mathcal{A}$, di costo temporale polinomiale, che
+    è in grado di risolvere il TSP con un fattore di approssimazione $\alpha > 1$ costante. Dimostriamo che, se ciò fosse vero,
+    riusciremmo a risolvere in modo \underline{esatto} (questa volta non approssimato) il problema del ciclo hamiltoniano, notoriamente
+    NP completo.
+
+    \begin{enumerate}
+      \item Partendo dal grafo $G = \{ V, E \}$, generico grafo non pesato, istanza del problema del ciclo hamiltoniano
+      costruiamo $G' = (V, E')$ grafo completo, assegnando i costi sugli archi nel seguente modo:
+      \begin{equation*}
+        c(e) =
+          \begin{cases}
+            1 & \text{se } e \in E\\
+            \alpha \cdot |V| + 1 & \text{altrimenti}
+          \end{cases}
+        \quad\quad \forall e = (u, v) \in V \times V
+      \end{equation*}
+      
+      \item Risolviamo il problema del TSP sull'istanza appena costruita mediante $\mathcal{A}$ e calcoliamo il costo $C$ della soluzione trovata.
+      \item $G$ contiene un ciclo hamiltoniano $\Longleftrightarrow C \leq r \cdot |V|$:
+      \begin{itemize}
+        \item se $G$ ha un ciclo hamiltoniano, questo esiste anche in $G'$ e ha costo $|V|$, dato che deve visitare tutti i vertici del grafo,
+        passando solamente per gli archi presenti in $G$, di costo $1$ in $G'$. Ricorda che per visitare $n$ vertici, ognuno esattamente una volta
+        sola necessito di passare esattamente su $n$ archi. Teniamo ora in considerazione il fattore di approssimazione $\alpha$\dots la
+        soluzione approssimata può avere costo al massimo $\alpha \cdot |V|$, se esiste suddetto il ciclo in $G$.
+        \item se $G$ non contiene un ciclo hamiltoniano, qualunque ciclo trovato in $G'$ include almeno uno degli archi
+        che non erano presenti in $G$, di peso $\alpha \cdot |V| + 1$. La soluzione ottima di $\mathcal{A}$ sarà allora \underline{almeno} il costo
+        di tale arco, più il costo dei rimanenti $|V|-1$ archi: $(\alpha \cdot |V| + 1) + (|V|-1) > \alpha \cdot |V|$.
+      \end{itemize}
+      Questo è assurdo sotto l'assunzione che $\textit{P} \neq \textit{NP}$, perchè avremmo risolto un problema NP-completo
+      mediante un algoritmo polinomiale. Quindi l'unica alternativa possible per far funzionare questa dimostrazione è che
+      $\textit{P} = \textit{NP}$.
+
+      Sotto la più probabile ipotesi che $\textit{P} \neq \textit{NP}$ non esiste un algoritmo approssimato polinomiale per risolvere TSP con
+      fattore di approssimazione costante.
+    \end{enumerate}
+  }
+}
+
+\subsubsection{Algoritmo di Christofides per TSP}
+Secondo il risultato sopra, il fattore di approssimazione per un algoritmo di approssimazione di TSP non è costante,
+ammesso che $P \neq NP$. Un fattore di \textbf{approssimazione variabile}, dipendente dal numero di veritici, è sostanzialmente inutile.
+
+Questo è vero per istanze generiche del problema; ammettendo una \textbf{restrizione} del problema originale
+possiamo trovare algoritmi con fattori di \textbf{approssimazione costanti}.
+
+Ci concentriamo sulle istanze del problema la cui funzione di costo soddisfa la disuguaglianza traingolare:
+$$
+\forall i, j, k \in V \ : \ c((i, j)) \leq c((i, k)) + c((k, j))
+$$
+
+La disuguaglianza triangolare ci indica sostanzialmente che, a parità di nodo sorgente $A$ e destinazione $B$, è più conveniente scegliere
+il cammino di lunghezza minore $A \rightarrow B$ (esiste sempre siccome il grafo è completo), piuttosto che seguire un cammino più lungo.
+
+Grazie a questa restrizione possiamo formulare un algoritmo approssimato ad-hoc per il problema.
+Vogliamo che l'algoritmo restituisca un ciclo hamiltoniano valido, non necessariamente di costo minimo, ma con costo di approssimazione costante.
+
+Un sottografo $G' = \{V', E'\}$ di $G = \{V, E\}$ è un grafo composto da $V' \subseteq V$ e $E' \subseteq E$.
+Indichiamo con $\text{cost}(G') = \sum_{e \in E'} c(e)$ la somma dei costi associati agli archi di $G'$.
+
+Definiamo ora un paio di cose che ci torneranno utili:
+
+\defbox{
+  \textbf{Ciclo euleriano:} cammino chiuso (ciclo) che passa esattamente una volta per tutti gli archi del grafo.
+}
+
+\theobox{
+  Dato un grafo, esiste un cammino euleriano se e solo se tutti i nodi del grafo hanno grado pari. Ammesso che esista, può essere trovato
+  in tempo polinomiale.
+}
+
+\theobox{
+  dato $G$ grafo pesato la cui funzione di costo soddisfa la proprietà triangolare e un \textit{cammino semplice} $C$ (ovvero un cammino
+  che passa una sola volta per ogni arco) di $k$ archi (quindi $k+1$ nodi), risulta che:
+  $$
+  c((v_1, v_{k+1})) \leq \sum_{i=1}^k c((v_i, v_{i+1}))
+  $$
+
+  Ovvero, il cammino diretto ha costo non superiore al cammino $C$, grazie alla proprietà triangolare.
+}
+
+\proofbox{
+  Dimostrazione per induzione che la proprietà è generalizzabile sul numero $k$ di archi:
+  \begin{itemize}
+    \item Casi base:
+    \begin{itemize}
+      \item per $k=1$ è banale: $c((v_1, v_2)) \leq c((v_1, v_2))$ 
+      \item per $k=2$ vale la proprietà triangolare: $$ c((v_1, v_3)) \leq \sum_{i=1}^2 c((v_i, v_{i+1})) = c((v_1, v_2)) + c((v_2, v_3)) $$
+    \end{itemize}
+    \item Caso induttivo, $k>2$: ipotizziamo che la proprietà sia vera per $k-1$ archi e dimostriamo che questa ipotesi implica la correttezza
+    della proprietà per $k$ archi.
+      \begin{align*}
+        \sum_{i=1}^k c((v_i, v_{i+1})) &\\
+        & = \sum_{i=1}^{k-1} c((v_i, v_{i+1})) + c((v_k, v_{k+1}))\\
+        & \geq c((v_{1}, v_{k})) + c((v_{k}, v_{k+1})) \tag{ipotesi induttiva}\\
+        & \geq c((v_{1}, v_{k+1})) \tag{dal caso $k=2$}\\
+      \end{align*}
+  \end{itemize}
+}
+
+
+\subsubsection{Algoritmo di Christofides per TSP}
+
 
 Algoritmo di Christofides per TSP con proprietà triangolare sulla funzione di costo.
 Trova una soluzione approssimata.
@@ -87,110 +424,3 @@ Questo costo è uguale a n.
 
 Dunque: $\alpha = \frac{3 (n-1)}{2n} \rightarrow \frac{3}{2}$ per $n \rightarrow \infty$.
 Abbiamo così dimostrato che l'UB è tight.
-
-\subsection{Vetex Cover}
-Def. Vertex Cover $V' \cup V$ tale che tutti gli archi siano copert: $\forall (u, v) \in E | u \in V' or v \in V$.
-
-Def. Vertex Cover di costo minimo: vertex cover di minima cardialità (minimo numero di nodi possibili).
-
-Input: G = (V, E) non diretto (no vincoli su completezza)
-Output: vertex cover di costo minimo.
-
-Esempio: coprire con il numero minimo di telecamere tutte le strade di un grafo.
-
-Una soluzione greedy potrebbe essere quella di scegliere un nodo alla volta, eliminando man mano i vertici coperti,
-finchè non si arriva alla copertura degli archi completa.
-
-Un diagramma a stella dimostra che la soluzione approssimata si discosta molto da quella ottima.
-cost(OPT) = 1
-cost(APPROX) = m-1
-
-\subsubsection{Greedy Vertex Cover}
-Un'alternativa greedy consiste nel selezionare man mano gli archi, inserendo i vertici su cui incidono nel VC.
-
-Snippet: greedy VC(G)
-C = set()
-while E not empty:
-  scegli (u, v) in E a caso
-  C.add(u, v)
-  elimina gli archi incidenti in u e v
-return C
-
-Costo polinomiale: alla peggio visito tutti gli archi. Terminazione assicurata dal fatto che ad ogni iterazione almeno l'arco (u, v)
-viene eliminato.
-
-Il VC ritornato è sempre di cardinalità pari, dato che per ogni arco vengono aggiunti due nodi e tutti i nodi incidenti venogno eliminati.
-
-Definito E' in E insieme degli archi selezionati durante l'esecuzione, sappiamo che |C| = 2 |E'|.
-Infatti, per ogni arco selezionato inseriamo due nodi.
-
-Dati E' archi disgiunti, servono almeno C nodi. |C| = 2 |E'|. Inoltre |E'| <= |C*|, dove C* è la soluzione ottima.
-Per proprietà transitiva |C| <= 2|C*|, quindi alpha 2.
-
-Si può dimostrare che l'UB è tight con la famiglia di grafi a stella.
-Il costo ottimo cost(OPT) = 1, mentre cost(APPROX) = 2, portando a un coefficiente di 2.
-
-\subsubsection{ILP Vertex Cover}
-Possiamo migliorare il coefficiente di approssimazione usando la programmazione lineare intera.
-
-Usiamo la tecnica generica di relax-round.
-
-1) Formuliamo il problema secondo il framework della programmazione lineare intera:
-$$
-\forall v \in V : x_v = 0 se v \notin VC, 1 otherwise
-min \sum_{v \in V} x_v
-x_v + x_u \geq 1 \forall (u, v) \in E
-x_v \in \{0, 1\}  vincolo di interezza
-$$
-
-Aka:
- - per ogni vertice associamo una variabile booleana che rapprsenta se il vertice viene scelto come appartenente al vertex cover.
- (da qui l'interezza)
- - vogliamo scegliere il numero minimo di vertici.
- - almeno uno tra i due vertici incidenti sullo stesso arco deve essere scelto.
-
-2) Posso dare questa formulazione in pasto ad un solver? no, anche la ILP è un problema NP-hard
-
-Per questo motivo rilassiamo il vincolo di interezza per rendre la risoluzione più facile: il nuovo problema di programmazione lineare
-(linear programming --- LP) ammette $x_v \in [0, 1]$.
-
-3) Passiamo alla fase di rounding per decidere se scegliere il vertice.
-Dato il risultato ottimo di LP $x_v* \in [0, 1]$ vogliamo trasformarlo in $\hat{x_v} \in \{0, 1\}$.
-
-$$
-\hat{x_v} = 0 if x_v* \lt 0.5, 1 if x_v* \geq 0.5
-$$
-
-Scegliamo 1 se il $x_v*$ è 0.5 perchè, se scegliessimo 0, la soluzione potrebbe non essere un cover.
-E.g., quando due vertici connessi da un arco hanno costo 0.5: in questo caso il vincolo di somma maggiore o uguale a 1 è rispettato,
-ma se l'arrotondamento di 0.5 venisse fatto a 0, nessuno dei due verrebbe preso.
-
-Da una prospettiva diversa: negli algoritmi di approssimazione scendiamo a compromessi sul costo del'algoritmo, non sulla correttezza
-della soluzione (in questo caso il fatto che il VC debba essere completo).
-
-4) Il VC approssimato è $\{ v \in V | \hat{x_v} = 1 \}$. Sicuramente è un VC in quanto, essendo partiti dalla soluzione 'star' soggetta
-al vincolo di somma maggiore di 1, sicuramente per ogni arco sceglieremo almeno un vertice incidente. La somma di due numeri non può
-essere almeno 1 con entrambi i valori sotto a 0.5.
-
-Analisi di costo. Dato lo spazio delle soluzioni LP, le soluzioni ILP sono un suo sottoinsieme. TODO diagramma eulero venn
-La soluzione, se si trova nel sottoinsieme ILP, allora è ottima per entrambi; le soluzioni ottime coincidono.
-Se la soluzione ottima si trova in LP, ma non il ILP, allora il suo costo sarà minore siccome la formulazione ha vincoli più lassi della
-controparte ILP.
-
-Poniamo $C_{ILP} = \sum_{v \in V} x_v$ e $C_{LP} = \sum_{v \in V} x_v^*$.
-Per quanto appena scritto stanno nella relazione $C_{ILP} \geq C_{LP}$ (sempre valido per rilassamenti in LP).
-Nota che ILP coincide con l'ottimo.
-
-Ora cerchiamo di mettere in relazione LP (star) e APPROX (hat).
-Cerchiamo una maggiorazione: $\hat{x_v} \leq 2 x_v^* \forall v \in V$. Verifica: 
- - se $\hat{x_v} = 0 \rightarrow x_v^* compreso tra 0 e 1/2 escluso$
- - se $\hat{x_v} = 1 \rightarrow x_v^* compreso tra 1/2 e 1$
-
-Passiamo alla sommatoria mantenendo la relazione: $\sum_{v \in V} \hat{x_v} \leq 2 \sum_{v \in V} x_v^*$.
-Mettiamo insieme la catena di disequazioni: $C_APPROX / C_OTT  \leq 2$.
-
-Analisi tight? sì, dimostrabile con l'esempio di un grafo ad anello con numero pari di nodi.
-APPROX = n, OPT = n/2 (numero pari di nodi per poter dividere).
-
-Vedi: materiale extra su branch-and-bound
-
