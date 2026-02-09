@@ -347,80 +347,140 @@ Definiamo ora un paio di cose che ci torneranno utili:
 
 
 \subsubsection{Algoritmo di Christofides per TSP}
+L'algoritmo di Christofides per TSP con proprietà triangolare sulla funzione di costo,
+trova una soluzione approssimata cercando un ciclo euleriano, che poi usa per costruire il ciclo hamiltoniano.
 
+Ripassa: Prim e Kruskals, entrambi algoritmi per la costruzione di minimum spanning tree su grafi pesati non diretti.
 
-Algoritmo di Christofides per TSP con proprietà triangolare sulla funzione di costo.
-Trova una soluzione approssimata.
-Secondo la proprità triangolare: $l_1 + l_2 \geq l_3$. Applicata ai costi ci indica che è più conveniente passare per $l_3$.
+\defbox{
+  \textbf{Matching.} Dato $G = (V, E)$, un sottoinsieme di archi $E' \subseteq E$ si dice matching
+  se non esistono in $E'$ due archi che condividono lo stesso vertice. Quello che stiamo creando, è un
+  nuovo grafo in cui ogni vertice ha al massimo un arco incidente (ogni nodo ha massimo grado 1).
 
-Ripassa: Prim e Kruskals
+  \textbf{Matching massimale.} Matching al quale non si possono aggiungere ulteriori archi senza violare
+  le proprietà del matching.
 
-1. Costruisco T* minimum spanning tree sul grafo originale con Kruskal o Prim.
-2. Considero i nodi di T* di grado dispari (numero dispari di archi connessi al nodo). Cerco il \textit{perfect matching} di costo minimo M* **nota
-3. Cerco il ciclo euleriano E su $T* \cup M*$
-4. Da E costruisco il ciclo hamiltoniano H partendo da E ed eliminando tutti i nodi visitati già visitati
+  \textbf{Matching perfetto.} Matching che copre tutti i vertici del grafo. Esiste solo se il numero di vertici
+  è pari.
+}
 
+Algoritmo di Christofides per TSP:
+\begin{enumerate}
+  \item Costruisco $T^*$ Minimum Spanning Tree (MST) sul grafo originale con Kruskal o Prim.
+  \item Considero il sottografo $G_d$ dei nodi di grado (numero dispari di archi connessi al nodo) dispari in  $T^*$;
+  nota che $G_d$ contiene sicuramente la radice e le foglie dell'albero di $T^*$ (in quanto di grado 1), più
+  altri eventuali nodi interni di grado dispari. Sostanzialmente in questo passaggio raggruppiamo tutti i nodi
+  che ci proibiscono di costruire un cammino Euleriano.
+  Cerco il \textit{perfect matching} di costo minimo $M^*$ in $G_d$ (vedi sopra la def. di perfect matching).
+  \item Sia $G' = T^* \uplus M^*$ il grafo ottenuto dall'unione multinsieme degli archi di $T^*$ e $M^*$
+  \item Cerco il ciclo euleriano (cammino chiuso che visita tutti gli archi) $E$ su $G'$. Nota che il ciclo
+  euleriano non da garanzie sul numero di volte per cui si passa da un nodo, potrebbero essere più di una.
+  \item Partendo da $E$ costruisco un ciclo hamiltoniano $H$ eliminando i nodi già visitati.
+\end{enumerate}
 
-**nota
-Dato un grafo G = (V, E), il matching $M \in E$ è l'insieme di archi che coprono tutti i vertici del grafo, in modo tale che ogni coppia
-di archi non condivida nessun nodo.
-Prendiamo il perfect matching di costo minimo $M* \in E$.
-
-Problemi:
-1. Al passo 2, non sempre esiste un cammino euleriano su un grafo. Necessitiamo di tutti i nodi di grado pari.
-Assicurato per costruzione: ad ogni nodo di grado dispari abbiamo aggiunto un nodo, rendendolo di grado pari.
-2. Il matching al passo 2 richiede un numero di nodi pari, altrimenti uno rimane fuori. **assocurato
-
-**Assicurato
-Somma dei gradi dei nodi di un grafo: S = 2 |E|. Ogni arco incide su due nodi.
-La somma dei nodi di grado pari P è pari, dato che rimane un fattore due.
-La somma dei nodi di grado dispari continua ad essere pari: D = S - P, posso raccogliere un due.
-Siccome i numeri che compongono la somma sono dispari, il loro numero deve essere pari.
+Tutti i passaggi sopra elencati sono realizzabili (in tempo polinomiale)? Sì:
+\begin{itemize}
+  \item Arrivati al passo 2, non sempre esiste un cammino euleriano su un grafo. Necessitiamo di tutti i nodi di grado pari.
+  Assicurato per costruzione: ad ogni nodo di grado dispari abbiamo aggiunto un arco, rendendolo di grado pari.
+  \item Il matching al passo 2 richiede un numero di nodi pari, altrimenti uno rimane fuori. Assicurato:
+  \begin{enumerate}
+    \item Somma dei gradi dei nodi di un grafo: $S = 2 |E|$. Ogni arco incide su due nodi.
+    \item La somma dei nodi di grado pari $P$ è pari, dato che nella fattorizzazione è presente un fattore due.
+    \item La somma dei nodi di grado dispari continua ad essere pari: $D = S - P$, posso raccogliere un due.
+    \item Siccome i numeri che compongono la somma sono dispari, il \textit{numero di addendi} deve essere pari.
+  \end{enumerate}
+  \item È sempre possibile calcolare il ciclo hamiltoniano $H$ a partire da $E$: si parte dal nodo radice
+  e si percorrono i nodi di $E$, includendoli in $H$ se non già presenti, altrimenti si saltano.
+  Questo è sempre possibile siccome richiediamo in ingresso un grafo completo, quindi per ogni coppia di nodi
+  esisterà (nel grafo originale) un arco che li congiunge, indipendentemente dal fatto che sia presente in $E$.
+\end{itemize}
 
 \subsection{Analisi dei Costi}
-Definiamo H soluzione approssimata, H* soluzione ottimale.
+\theobox{
+  L'algoritmo di Christofides ha fattore di approssimazione di $\frac{3}{2} = 1.5$.
+}
 
-Dato T* MST su G, rimuovendo un arco dal H* ottengo un albero T di costo minore rispetto a H*, dato che ho eliminato un arco:
-cost(H*) >= cost(T)
-Chiamiamo T 'cammino'.
+\begin{enumerate}
+  \item Definiamo $H$ soluzione approssimata, $H^*$ soluzione ottimale. Usiamo $c(\cdot)$ per indicare il costo di una soluzione.
 
-Il costo del MST è sicramente minore di T per costruzione: cost(H*) >= cost(T) >= cost(T*)
+  Rimuovendo un arco da $H^*$ ottengo un albero $T$ (una ``catena'' di nodi) di costo minore
+  rispetto a $H^*$, dato che ho eliminato un arco: $$ c(H^*) \geq c(T) $$
 
-Dato il grafo originale G, scelgo i nodi di grado dispari (numero di nodi pari) che appartengono a H*. Chiamo il grafo indotto da questi nodi $\Gamma$.
-Il costo di questo grafo costa meno dalla disuguaglianza triangolare.
-Dato il grafo $\Gamma$ è sufficiente metà grafo per ottenere un matching. Entrambi i matching saranno di costo superiore al perfect matching (per def quello di costo minimo). 
-cost(H*) >= cost($\Gamma$) = cost(M1) + cost(M2) >= 2 cost(M*).
+  Chiamiamo T ``cammino''.
 
-Il ciclo euleriano passa una e una sola volta per gli archi di T* e M*: cost(E) = cost(T*) + cost(M*).
+  Il costo del MST è strettamente minore di T per costruzione (entrambi alberi di copertura, uno di costo minimo, l'altro generico):
+  $$ c(H^*) \geq c(T) \geq c(T^*) $$
 
-Il costo di H, soluzione approssimata, è inferiore o uguale al costo del ciclo euleriano, dato che da E eliminiamo i nodi già visitati;
-inoltre, per proprietà triangolare, l'arco diretto (shortcut) è sempre più vantaggioso del giro lungo.
-I costi di T* e M* possono essere maggiorati dalle disequazioni sopra.
-cost(H) <= cost(E) = cost(T*) + cost(M*) <= cost(H*) + cost(H*)/2 = 3/2 cost(H*)
+  \item Chiamiamo $V_d$ l'insieme dei nodi di grado dispari (il numero di tali nodi è pari, come dimostrato sopra)
+  che appartengono a $T^*$.
+  Chiamiamo $\Gamma$ il ciclo ottenuto selezionando da $H^*$ solamente i nodi $\in V_d$ e sostituendo i cammini contenenti nodi
+  $\notin V_d$ con un arco di $G$ (\textbf{shortcut}). Dalla proprietà triangolare, utilizzare uno shortcut,
+  migliora il costo complessivo della soluzione: $$ c(\Gamma) \leq c(H^*)$$
 
-Per questo algo quindi $\alpha = \frac{3}{2}$.
+  \item $\Gamma$ è composto da un numero pari di nodi, e di conseguenza di archi;
+  la parità dei nodi ci garantisce di poter trovare almeno un perfect matching in $\Gamma$. Ai fini della dimostrazione
+  torna comodo che $\Gamma$ (il ciclo) sia visto come l'unione di \underline{due} perfect matching
+  disgiunti $\Gamma = M_1 \cup M_2$ così composti:
+  percorrendo il ciclo, un arco fa parte di $M_1$, quello dopo di $M_2$, il successivo di $M_1$ e così via.
+  Sia $M_1$ che $M_2$ sono perfect matching calcolati sui nodi di $\Gamma$; in quanto tali, ognuno di loro
+  non può avere costo minore del Minimum Perfect Matching $M^*$ su $\Gamma$:
+  $$ c(\Gamma) = c(M_1) + c(M_2) \geq c(M^*) * c(M^*) = 2 \cdot c(M^*)$$
+
+  Usando il punto 2. abbiamo che: $$ c(H^*) \geq c(\Gamma) \geq 2 \cdot c(M^*) \Rightarrow \frac{c(H^*)}{2} \geq c(M^*)$$
+
+  \item Il ciclo euleriano $E$ passa una e una sola volta per gli archi di $H^*$ e di $T^*$ (quindi li comprende tutti),
+  siccome è stato calcolato su $G' = T^* \uplus M^*$:
+  $$ c(E) = c(T^*) + c(M^*)$$
+
+  \item Il costo della soluzione approssimata $c(H)$, è inferiore o uguale al costo del ciclo euleriano $c(E)$,
+  dato che da E eliminiamo i nodi già visitati, saltandoli attraverso uno shortcut (un arco diretto scelto dal grafo originale $G$);
+  lo shortcut è sempre più vantaggioso del ``giro lungo'', dalla disuguaglianza triangolare:
+  $$ c(H) \leq c(E) = c(T^*) + c(M^*) \leq  c(H^*) + \frac{c(H^*)}{2} = \frac{3}{2} c(H^*)$$
+
+\end{enumerate}
+
+Quindi $\alpha = \frac{3}{2} = 1.5$. L'algoritmo di Christofides è il miglior algoritmo di approssimazione conosciuto per Euclidean TSP (
+a.k.a. TSP in cui la funzione di costo rispetta la disuguaglianza triangolare).
 
 Come capire se la finestra definita da alpha è tight? possiamo essere sicuri che la finestra sia la minima possibile trovando
-almeno un caso in cui il costo coincide con l'estremo superiore della finestra 3/2 cost(H*).
+almeno un'istanza (o una classe di istanze) in cui il costo coincide con l'estremo superiore della finestra.
 
-Basta trovare un'istanza del problema con costo pari all'UB. Tuttavia, questa specifica istanza potrebbe essere risolta
-differentemente per ovviare al costo. Quindi, è bene trovare una famiglia di grafi che racchiuda al suo interno un numero infinito di
-istanze.
+Per verificare formalmente la \textit{tightness} basta trovare un'istanza del problema con costo pari all'UB.
+Tuttavia, in termini pratici, questa specifica istanza potrebbe essere risolta differentemente per ovviare al suo elevato costo,
+adottando l'algoritmo generico per le istanze che si comportano bene con esso.
+Quindi è bene trovare una famiglia di grafi che racchiuda al suo interno un numero infinito di istanze tale per cui il costo della
+soluzione coincide con l'UB.
 
-La struttura della famiglia di grafi che consideriamo comprende un numero dispari di nodi collegati, da archi di costo 1, nel modo seguente TODO
+La struttura della famiglia di grafi che costituisce un input patologico per Euclidean TSP comprende
+un numero dispari di nodi collegati come mostrato in \cref{fig:christofides_pathological}.
 
-Il MST T* è quello che percorre lo zig zag interno del grafo: cost(T*) = n-1. Come prima è un grafo degenere, ovvero un cammino.
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.8\linewidth]{imgs/christofides_pathological.pdf}
+  \caption{Input patologico per l'algoritmo di Christofides. In verde il ciclo hamiltoniano ottimo, in rosso quell approssimato.}
+  \label{fig:christofides_pathological}
+\end{figure}
 
-Si scelgono i nodi di grado dispari per costruire il perfect matching. Gli unici nodi di grado dispari sono le estremità.
-Si aggiunge un arco che unisce i due estremi.
-Il costo del perfect matching M* è il costo di questo arco: cost(M*) = (n-1)/2, corrispondente al numero di archi
-della parte sud del grafo.
+Dato il grafo in \cref{fig:christofides_pathological}, chiamiamo $n$ il numero di nodi del grafo.
+Il MST $T^*$ è quello che percorre lo zig zag interno del grafo: $c(T^*) = n-1$; il MST trova un semplice cammino (che è un caso
+speciale di albero).
 
-Il costo di E è la somma dei due: cost(E) = cost(T*) + cost(M*) 3/2 (n-1) = cost(H).
-Il costo hamiltoniano costa uguale perchè non percorriamo nessun nodo più di una volta.
+Si scelgono i nodi di grado dispari in per $T^*$ costruire il perfect matching $M^*$.
+Gli unici nodi di grado dispari sono le estremità di grado 1 (in $T^*$); queste estremità si trovano nella parte nord del grafo, che
+che ospita $\frac{n+1}{2}$ nodi; si capisce ora perchè l'arco rosso a nord costa $\frac{n-1}{2}$: per rispettare la disuguaglianza triangolare.
 
-È possibile di mostrare che il costo del ciclo hamiltoniano ottimo è quello che visita tutti i nodi del grafo esternamente.
-Questo costo è uguale a n.
+Perchè non $\frac{n}{2}$? $n$ è dispari, quindi i risultati più vicini in $\mathbb{N}$ che otteniamo dividendo per due sono $\frac{n+1}{2}$
+e $\frac{n-1}{2}$.
+
+Si aggiunge tale arco al perfect matching $M^*$.
+Il costo del perfect matching $M^*$ è il costo di questo arco: $c(M^*) = \frac{n-1}{2}$.
+
+Il costo del tour euleriano $E$ è la somma dei due costi: $cocst(E) = c(T^*) + c(M^*) = (n-1) + \frac{n-1}{2} = \frac{3}{2}n = cost(H)$.
+Il costo del tour hamiltoniano $H$ costa uguale perchè non percorriamo nessun nodo più di una volta; $H$ è mostrato in verde.
+
+È possibile di mostrare che il costo del ciclo hamiltoniano \textit{ottimo} è quello che visita tutti i nodi del grafo esternamente,
+mostrato in verde.
+Questo costo è uguale a $n$.
 
 Dunque: $\alpha = \frac{3 (n-1)}{2n} \rightarrow \frac{3}{2}$ per $n \rightarrow \infty$.
 Abbiamo così dimostrato che l'UB è tight.
