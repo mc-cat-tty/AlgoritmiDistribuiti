@@ -25,6 +25,7 @@
 \usepackage{fancyvrb}
 \usepackage{algorithm}
 \usepackage{algpseudocode}
+\usepackage{float}
 
 \newcommand{\Var}[1]{\mathbf{#1}}
 \newcommand{\CommentColor}[1]{\textcolor{teal}{#1}}
@@ -102,7 +103,7 @@
 \makeatother
 
 \begin{document}
-\clearpage\maketitle\tableofcontents
+\clearpage\maketitle\tableofcontents\clearpage
 
 \input{theory/1-introduction.tex}
 
@@ -112,4 +113,5 @@
 
 \separator{Algoritmi Distribuiti}
 \input{theory/4-algoritmi-distribuiti-intro.tex}
+\input{theory/5-broadcast.tex}
 \end{document}

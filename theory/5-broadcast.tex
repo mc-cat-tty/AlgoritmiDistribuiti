@@ -1,131 +1,181 @@
 \section{Broadcast}
-Esempio. Broadcast: flooding protocol.
-Un nodo vuole trasmettere a tutti gli altri un'informazione I.
-Restrizioni:
- - unique initiator: per definizione del problema
- - G connesso: per definizione, altrimenti alcuni nodi resterebbero escluisi
- - Bidirectional links
- - Total reliability
+\defbox{
+  \textbf{Broadcast.} Problema in cui una entità vuole inviare una informazione $I$ a tutte le altre
+  entità della rete.
 
-\begin{verbatim}
-S = {INITIATOR, SLEEPING, DONE}
+  Restrizioni: iniziatore unico (per definizione del problema), rete connessa
+  (altrimenti alcuni nodi resterebbero esclusi), total reliability, link bidirezionali
+}
 
-INITIATOR
-spontaneously
-  send(I) to N(x)
-  become(DONE)  # Transitiamo allo stato DONE
-receiving(I)
-  nil
-  # In futuro ometteremo le azioni nil, se non specificate si evitano
-  
-SLEEPING
-receiving(I)
-  send(I) to N(x) - {sender}  # Sender è il nodo da cui ho ricevuto il messaggio
-  become(DONE)  # Transitiamo allo stato DONE
-\end{verbatim}
+\subsection{Flooding}
+\begin{algorithm}[H]
+\caption{Naive Broadcasting Algorithm}
+\begin{algorithmic}[1]
+\State S = {INITIATOR, SLEEPING, DONE}
+\State
+\State INITIATOR
+\State spontaneously:
+\State   \hskip1.0em send(I) to N(x)
+\State   \hskip1.0em become(DONE)  \Comment{Transitiamo allo stato DONE}
+\State
+\State on receiving(I):
+\State   \hskip1.0em nil. \Comment{In futuro ometteremo le azioni nil, se non specificate si evitano}
+\State
+\State SLEEPING
+\State on receiving(I):
+\State   \hskip1.0em send(I) to N(x) - {sender}  \Comment{Sender è il nodo da cui ho ricevuto il messaggio}
+\State   \hskip1.0em become(DONE)  \Comment{Transitiamo allo stato DONE}
+\State
+\State DONE \Comment{No actions}
+\end{algorithmic}
+\end{algorithm}
 
-Oss. 1: lo stato DONE costituisce una terminazione locale, non esiste una terminazione globale.
-Oss. 2: nessuna entità conosce quando l'intero processo termina (termination detection problem).
+\obsbox{Lo stato DONE costituisce una terminazione locale, non esiste lo stato di terminazione globale, sappiamo solo che l'algoritmo prima o poi terminerà.}
+\obsbox{Nessuna entità conosce quando l'intero processo termina, problema che prende il nome di \textbf{termination detection problem}.}
 
-Terminazione? assicurata dalle restrizioni di connessione totale e affidabilità totale. Non abbiamo vincoli di direzionalità.
-In un grafo totalmente connesso troveremo sempre un cammino dall'inizializzatore ad ogni altro nodo.
+Correttezza? assicurata dalle restrizioni di connessione totale e affidabilità totale.
+In un grafo connesso troveremo sempre un cammino dall'inizializzatore ad ogni altro nodo.
 
-Costo del flooding.
-Convenzione. n numero di nodi. m numero di link.
+Terminazione? Oltre a quanto scritto sopra, un'entità entra nello stato DONE dopo aver ricevuto (e inviato) il messaggio.
+Combinando le due osservazioni, tutte le entità arriveranno ad essere nello stato DONE.
 
-Tip. Per calcolare il costo temporale cerca relazioni tra quello che vuoi contare e quantità già note.
-Da tenere in considerazione sono il numero di messaggi per arco, il numero 
+\subsection{Flooding: Analisi dei Costi}
+Convenzione: $n$ numero di nodi, $m$ numero di link.
 
-Costo? su ogni arco incidono due nodi, ogni nodo trasmette I una sola volta; l'arco vede al massimo 2 messaggi.
-\leq 2 messaggi per link. total num of messages <= 2m \in O(m).
+Tip: per calcolare il costo temporale cerca relazioni tra quello che vuoi contare e quantità già note.
+Da tenere in considerazione sono il numero di messaggi per arco, il numero di archi, ecc.
 
-TODO
+Analizziamo il \textbf{numero di messaggi}.
 
-Con l'ottimizzazione (non reinviare I a chi ce l'ha mandato) diventa: |N(s)| + sum_{x \neq s} (|N(x)|-1) = sum_{x} |N(x)| - sum_{x \neq s} 1 = 2m - (n-1).
+Costo se non ci fosse l'ottimizzazione \texttt{N(x) - \{sender\}}?
+su ogni arco incidono due nodi, ogni nodo trasmette $I$ una sola volta; l'arco vede al massimo 2 messaggi:
+$$ \text{Num of messages per link} \leq 2 \Rightarrow \text{Messages}(\text{Flooding}) \leq 2m \in O(m) $$
 
-Def. Distanza d(a, b). Numero minimo di archi tra tutti i percorsi tra a e b.
-Def. Raggio o Eccentricità r(a). Massima distanza di un nodo a da tutti gli altri.
-Def. Diametro di un grafo D(G). Massima eccentricità tra tutti i nodi di G.
+Con l'ottimizzazione, dato un iniziatore $s$, il costo è:
+$$
+|N(s)| + \sum_{x \neq s} (|N(x)| - 1) =
+\underbrace{\sum_x |N(x)|}_\text{Somma dei gradi dei nodi di un grafo}
+- \sum_{x \neq s} 1 = 2m - (n-1)
+$$
 
-Ideal time. In ogni istance ogni vicino riceve un messaggio.
+Analizziamo ora l'\textbf{ideal time complexity} (in una unità di tempo ogni vicino riceve un messaggio).
+Come sempre siamo interessati al \textbf{worst case}: il caso peggiore
+tra tutti i possibili iniziatori e tutte le possibili esecuzioni.
 
-r(initiator) = max_y{d(initiator, y)} \forall y \in E
-Nel caso generale non conosciamo quale sia l'iniziatore. Il caso peggiore è il peggiore iniziatore per ogni possibile esecuzione.
-Max_{(x, y)}{d(x, y)} = Max{r(x)} = D(G) for any pair (x, y) \in E x E
+\defbox{ Distanza tra due nodi $d(a, b)$. Numero minimo di archi tra tutti i percorsi che esistono tra $a$ e $b$. }
+\defbox{ Raggio, o eccentricità, $r(a)$. Massima distanza di un nodo $a$ da qualsiasi altra entità. }
+\defbox{ Diametro di un grafo $D(G)$. Massima eccentricità tra tutti i nodi di G. }
 
-num of time units <= D(G) <= n-1 \in O(n) TODO riscrivi le time units con Time(Flooding(G)
-Res. Il caso peggiore è quelo in cui il grafo è una catena (nodi srotolati e messi in fila).
+Il primo messaggio è inviato dall'iniziatore e deve raggiungere tutte le entità.
+L'ideal time speso per andare da init.\ a tutti gli altri nodi è:
+$$r(\text{init}) = \max_y{d(\text{init}, y)} \forall y \in E$$
+
+Nel caso generale non conosciamo quale sia l'iniziatore.
+Il caso peggiore è individuato dal peggiore iniziatore per ogni possibile esecuzione.
+$$\max_{(x, y) \in E x E}{d(x, y)} = \max_{x \in E}{r(x)} = D(G)$$
+
+Abbiamo che:
+$$ \text{Time}(\text{Flooding}(G)) \leq D(G) \leq n-1 \in O(n) $$
+
+Conseguenza: la topologia peggiore è quella in cui la rete è una catena (nodi srotolati e messi in fila).
 
 In caso di casual time complexity il costo peggiore rimane n-1.
 Anche se un grafo non è una catena, la propagazione dei messaggi sugli altri cammini potrebbe essere così lenta che la propagazione più
-veloce è quella lungo il diametro.
+veloce è quella lungo il diametro, richiedendo così il numero di messaggi specificato.
+Se sugli altri percorsi l'informazione fluisce più velocemente, raggiungeremo convergenza prima che sia necessaria la propagazione
+sul diametro del grafo.
 
-Lower bound.
 Si possono usare meno di n-1 time units? no, altrimenti salteremmo qualche nodo sul diametro del grafo.
+Possiamo provarlo calcolato un lower bound per il \textit{problema}:
+$$ \text{Time}(\text{Broadcast}(G)) \geq \max_{(x, y)}{d(x, y)} = D(G)$$
 
-Però\dots possiamo fare meglio in termini di numero di messaggi?
-Intuzione. Dalla formulazione del problema, ogni entità deve conoscere I. Escluso l'inizializzatore rimangono n-1 entry che non conoscono I.
-Almeno n-1 messaggi devono essere mandati.
-Message(Broadcast(G)) >= n-1 \in \Omega(n)
 
-Considerazione. Ogni messaggio deve passare almeno una volta su ogni arco, altrimenti alcune porzioni del grafo non potrebbero
-ricevere I. Richiedere se l'altro nodo non ha il messaggio farebbe comunque spendere più di un messaggio per arco.
+Ma\dots possiamo fare meglio in termini di numero di \textit{messaggi}?\\
+Intuzione: Dalla formulazione del problema, ogni entità deve conoscere $I$.
+Escluso l'inizializzatore, rimangono $n-1$ entità che non conoscono $I$.
+Almeno $n-1$ messaggi devono essere mandati:
+$$\text{Messages}(\text{Broadcast}(G)) \geq n-1 \in \Omega(n)$$
 
-Possiamo migliorare il LB per il problema: Message(Brodadcast(G)) >= m \in \Omega(m)
+Considerazione: ogni messaggio deve passare almeno una volta su ogni arco, altrimenti alcune porzioni del grafo potrebbero
+non ricevere I. Richiedere se l'altro nodo non ha il messaggio prima di mandarlo farebbe comunque spendere più di un
+messaggio per arco.
 
-Ricorda. Stiamo cercando di chiudere il gap tra LB del PROBLEMA e LB dell'ALGORITMO di flooding.
-Message(Broadcast(G)) >= m
-Message(Flooding(G)) = 2m - n + 1 (dalla scorsa lezione)
-Message(Flooding(G)) >= Messsage(Broadcast(G))
+Possiamo migliorare (rendere più tight, quindi alzare) la stima del LB per il problema:
+$$ \text{Messages}(\text{Broadcast}(G)) \geq m \in \Omega(m) $$
 
-Possiamo fare di meglio? Il gap che cerchiamo di chiudere è "grande": 2m - n + 1 - m = m - n + 1
+Ricorda, stiamo cercando di chiudere il gap tra LB del \textit{problema} e costo dell'\textit{algoritmo} di flooding.
+\begin{align*}
+\text{Messages}(\text{Broadcast}(G)) >= m\\
+\text{Messages}(\text{Flooding}(G)) = 2m - n + 1 (dalla scorsa lezione)\\
+\text{Messages}(\text{Flooding}(G)) >= \text{Messages}(\text{Broadcast}(G))
+\end{align*}
 
-Restrizioni.
+Possiamo fare di meglio? Il gap che cerchiamo di chiudere è "grande": $2m - n + 1 - m = m - n + 1$.
+Dobbiamo sostanzialmente fare sparire il fattore 2.
+
 Se applichiamo restrizioni al problema, si può fare di meglio.
+Al posto che cambiare l'algoritmo, cerchiamo istanze specifiche per cui possiamo risolvere il problema con il costo
+specificato dal lower bound.
 
-Restrizione 1. Albero.
-Assumendo G è un albero T. m = n-1 (ogni nodo ha un arco padre a parte la radice).
+Restrizione 1: consideriamo un albero.\\
+Assumendo che $G$ è un albero $T$ abbiamo $m = n-1$ (ogni nodo ha un arco padre a parte la radice).
 
-Message(Flooding(T)) = 2m - n - 1 = 2(n-1) - n - 1 = n - 1 = m
+$$ \text{Messages}(\text{Flooding}(T)) = 2m - n - 1 = 2(n-1) - n - 1 = n - 1 = m $$
 
-Gli algoritmi di flooding sono complessità ottimale, in termini di messaggi inviati, per gli alberi.
+Gli algoritmi di flooding hanno complessità ottimale, in termini di messaggi inviati, per gli alberi.
+Nota che le entità non necessitano di sapere che si trovano su un albero.
 
-Restrizione 2. Grafo completo.
-Aka, ogni nodo è connesso con tutti gli altri.
-In grafi completi: m = n(n-1)/2. Vedi combinatoria o ragionamento intuitivo.
+Restrizione 2: grafo completo. A.k.a. ogni nodo è connesso con tutti gli altri.\\
+Nei grafi completi: $m = \frac{n(n-1)}{2}$. Ripassa matematica combinatoria o usa un ragionamento intuitivo: ogni nodo è
+connesso ad altri $n-1$; esistono $n$ nodi; moltiplicando questi due numeri otteniamo il numero di archi diretti,
+ma nel nostro caso non hanno direzione, quindi dobbiamo dimezzare il risultato. Il risultato è:
+$$ \text{Messages}(\text{Flooding}(G_\text{completo})) \in \theta(n^2) $$
 
-Message(Flooding(G)) \in \theta(n^2)
-Message(SimpleBroadcast(G)) = n-1. Init manda a tutti i suoi vicini.
-Time(SimpleBroadcast(G)) = D(G) = 1
+Dato che il grafo è completo, basta che l'iniziatore mandi a tutti i suoi vicini un messaggio (algoritmo che chiamiamo
+SimpleBroadcast):
+\begin{align*}
+\text{Messages}(\text{SimpleBroadcast}(G)) = n-1\\
+\text{Time}(\text{SimpleBroadcast}(G)) = D(G) = 1
+\end{align*}
 
-Osservazione. Floding è inefficiente in termini di messaggi per grafi completi, mentre è efficiente per gli alberi.
-Quindi funziona bene per grafi sparsi, che hanno pochi archi.
+\obsbox{
+  Il flooding è inefficiente, in termini di messaggi inviati, per grafi completi, mentre è efficiente per gli alberi.
+  Quindi funziona bene per grafi sparsi, che hanno pochi archi.
+}
 
-Idea. Da un grafo G posso sempre passare a T. Costruisco lo spanning Tree ed applico il flooding.
-Occhio, stiamo aggiungendo una restrizione siccome per costruire lo ST devo conoscere la topologia del grafo.
-In protocolli che usano molteplici volte il brodcast, il costo di costruire ST viene ammortizzato.
+Idea: da un grafo $G$ posso sempre passare ad un albero di copertura $T$; costruisco lo spanning tree ed applico il flooding.
+Attenzione, stiamo aggiungendo una restrizione siccome per costruire lo ST devo conoscere la topologia del grafo.
+Se non voglio aggiungere questa restrizione, devo usare un algoritmo distribuito che costruisca ST, potrebbe essere costoso.
+In protocolli che usano molteplici volte il brodcast, il costo di costruire ST viene ammortizzato
 
-WAKE-UP PROBLEM.
+\subsection{Wake-up Problem}
 Quando in un sistema distribuito un protocollo deve iniziare, serve che tutte le entità siano sveglie.
-Parto da una situazione in cui alcune entità sono attive, mentre altre dormienit. Come faccio a svegliare le entità dormienti?
+Parto da una situazione in cui alcune entità sono attive, mentre altre dormienti. Come faccio a svegliare le entità dormienti?
 
-Idea: ogni entità sveglia manda un segnale di wakeup in flooding.
+Idea: ogni entità sveglia manda un segnale di wake-up in flooding.
 
-State S = {ASLEEP, AWAKE}
-Sinit = {ASLEEP}
-Sterm = {AWAKE}
+\begin{algorithm}[H]
+\caption{Wake-up Flooding}
+\begin{algorithmic}[1]
+  \State State $S$ = {ASLEEP, AWAKE}
+  \State $S_\text{init}$ = {ASLEEP}
+  \State $S_\text{term}$ = {AWAKE}
+  \State
+  \State ASLEEP
+  \State spontaneously:
+  \State   \hskip1.0em send(W) to N(x)
+  \State   \hskip1.0em become(AWAKE)
+  \State receiving(W)
+  \State   \hskip1.0em send(W) to N(x) - \{sender\}
+  \State   \hskip1.0em become(AWAKE)
+\end{algorithmic}
+\end{algorithm}
 
-ASLEEP
-spontaneously
-  send(W) to N(x)
-  become(AWAKE)
-receiving(W)
-  send(W) to N(x) - {sender}
-  become(AWAKE)
+Analizziamo il numero di messaggi, correlandolo al numero di iniziatori:
+\begin{itemize}
+  \item 1 init: come il flooding $\text{Message}(\text{Wakeup}(G)) = 2m - n + 1$
+  \item tutti init: tutti mandano e si fermano, quindi $\text{Message}(\text{Wakeup}(G)) = 2m$. Ogni link vede 2 messaggi, corrispondenti a quelli inviati dai due capi dormienti.
+  \item k init: numero di messaggi compreso tra i due precedenti, ovvero $\text{Message}(\text{Wakeup}(G)) = 2m - n + k$
+\end{itemize}
 
-Costo messaggi.
-1 init -> come flooding. Message(Wakeup(G)) = 2m - n + 1
-Tutti init -> tutti mandano e si fermano. Message(Wakeup(G)) = 2m. Ogni link vede 2 messaggi, corrispondenti a quelli inviati dai due capi dormienti.
-k init -> nel mezzo. Message(Wakeup(G)) = 2m - n + k
-
-Costo temporale. Il caso peggiore è quando ho un solo AWAKE. In quel caso il tempo coincide con quello del flooding. O(n).
+Costo temporale: il caso peggiore è quando ho un solo AWAKE; in quel caso il tempo coincide con quello del flooding, ovvero $O(n)$.
