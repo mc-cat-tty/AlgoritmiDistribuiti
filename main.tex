@@ -36,6 +36,20 @@
   mathescape
 }
 
+% Separator
+\newcommand{\separator}[1]{
+  \clearpage
+  \thispagestyle{empty}
+  \vspace*{\fill}
+  \begin{center}
+    \Huge \bfseries #1
+  \end{center}
+  \vspace*{\fill}
+  \phantomsection
+  \addcontentsline{toc}{part}{#1}
+  \clearpage
+}
+
 \newcommand{\defbox}[1]{
 	\begin{tcolorbox}[
 		colback=blue!5!white,
@@ -90,7 +104,12 @@
 \begin{document}
 \clearpage\maketitle\tableofcontents
 
-\include{theory/1-introduction.tex}
-\include{theory/2-complexity-theory.tex}
-\include{theory/3-approx-algos.tex}
+\input{theory/1-introduction.tex}
+
+\separator{Algoritmi Approssimati}
+\input{theory/2-complexity-theory.tex}
+\input{theory/3-approx-algos.tex}
+
+\separator{Algoritmi Distribuiti}
+\input{theory/4-algoritmi-distribuiti-intro.tex}
 \end{document}

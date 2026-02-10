@@ -1,0 +1,141 @@
+\section{Introduzione agli Agloritmi Distribuiti}
+\subsection{Gli albori}
+Questo campo dell'informatica nasce ``per caso'' insieme all'esigenza di costituire cluster
+di computer con le risorse disponibili.
+Ad esempio, aggregando i computer dei docenti in un dipartimento universitario.
+Le topologie di queste reti sono inizialmente le più svariate, spesso i collegamenti sono disordinati e non progettati a priori.
+
+\subsection{Definizioni}
+\defbox{
+  \textbf{Ambiente distribuito.}
+  Collezione finita di entità che scambiano messaggi per raggiungere un obiettivo comune.
+}
+
+Per risolvere un problema, necessitiamo di un \textbf{algoritmo distribuito}, da eseguire sulle entità.
+Gli algoritmi distribuiti sono chiamati anche \textbf{protocolli}\dots infatti un protocollo è un algoritmo
+distribuito sul almeno due nodi, pensa al significato di questo termine nella teoria delle reti.
+
+Vogliamo che il protocollo sia \textbf{corretto}, ovvero che risolva il problema richiesto, e che sia efficiente,
+ovvero che lo faccia con un basso costo.
+
+Obiettivi: sfruttare le risorse a disposizione, tolleranza ai guasti sui singoli nodi, scalabilità (su diversi piani, ad esempio
+aumentare la potenza aumentando i nodi).
+
+Facendo un passo indietro, i diversi ambienti su cui un algoritmo può girare sono:
+\begin{itemize}
+  \item \textbf{sequenziale}: single core, single memory, operazioni sequenziali
+  \item \textbf{parallelo}: multicore, shared memory, distanze brevi sui bus
+  \item \textbf{distribuito}: many processors, many memories, operazioni parallele, grandi distanze tra le entità, scambio di messaggi.
+\end{itemize}
+
+% TODO comparison table
+
+Questi algoritmi devono essere pensati per lavorare con tante tante macchine eterogenee, soggette a ritardi di comunicazione e guasti.
+A differenza degli algoritmi paralleli, non si usano strategie di divisione del problema in sottoproblemi, gli algo distributi scambiano
+costantemente messaggi e sono collaborativi.
+
+Gli ingredienti di un ambiente distribuito sono: molteplicità delle entità, autonomia delle entità e interazione attraverso i messaggi.
+Esso può essere modellato con un grafo, in cui le entità sono rappresentate da nodi e i link tra essi sono archi.
+
+Le \textbf{entità} dell'ambiente distribuito sono gli elementi che eseguono la computazione.
+Queste entità hanno una certa autonomia, a livello di clock e memoria, per esempio ed interagiscono tra loro scambiandosi messaggi.
+
+Lo \textbf{stato} di una entità x, indicato con $\text{status}(x) \in S$, registra lo stato di x in ogni momento.
+Lo stato appartiene ad un insieme finito di possibili stati; ad esempio, $S = \{\text{idle}, \text{computing}, \text{waiting}, \dots\}$
+Lo stato $\text{status}(x)$ essere definito in ogni momento.
+
+Le entità sono \textbf{reattive}: reagiscono agli \textbf{eventi} con un comportamento definito dall'algoritmo, chiamato \textbf{azione}.
+Se non accade nulla, non viene fatto niente.
+Esempi di eventi sono: messaggi, tick del clock e attivazioni spontanee.
+
+Le azioni sono sequenze di \textbf{attività}, atomiche ed eseguibili in tempo finito.
+Dalla proprietà di atomicità deduciamo che un'azione non può essere interrotta neanche se viene
+scatenato un evento durante la sua esecuzione.
+
+Il comportamento (behaviour) $B(x)$ di una \textit{entità} $x$ è l'insieme di regole che mappano ogni
+coppia $(e, s) \in \textbf{eventi} \times \text{stati}$ in un'azione $A$: $B(x): (e, s) \rightarrow a$
+$B$ deve essere deterministico (esattamente un'azione per $(e, s)$) e completo (per ogni $(e, s)$ deve esistere almeno un'azione).
+
+Il comportamento del \textit{sistema} è $B(E) = {B(x) | x \in E}$, con $E$ insieme delle entità.
+Il comportamento deve essere simmetrico, ovvero ogni enità deve avere lo stesso comportamento: $B(x) = B(y) \ \forall x, y \in E$.
+
+\obsbox{Ogni sistema può essere reso simmetrico.}
+
+Ad esempio, definendo condizionalmente quali azioni eseguire in base al suo ruolo (e.g., client/server).
+
+Lavoriamo con un modello di  comunicazione \textbf{point-to-point}
+ogni entità $x$ riceve messagi solamente dai suoi in-neighbors $N_i(x)$ e manda messaggi solamente ai suoi out-neighbors $N_i(x)$;
+insieme, costituiscono il set dei vicini (neighbors) $N = N_i(x) \cup N_o(x)$.
+
+La comunicazione tra le entità può essere unidirezionale o bidirezionale e, dato che la topologia della rete può essere
+modellata con un grafo, avremo un grafo diretto per la comunicazione unidirezionale e un grafo adiretto in caso di bidirezionalità.
+
+I seguenti assiomi saranno sempre validi:
+\begin{itemize}
+  \item \textbf{delay di trasmissione finito}: in assenza di guasti (faults), un messaggio raggiunge la destinazione
+  (percorre un link), in tempo finito.
+  \item \textbf{orientamento locale}: ogni entità è in grado di distingure tra i suoi vicini.
+\end{itemize}
+
+\defbox{
+  \textbf{Orientamento locale.} Ogni nodo è in grado di disambiguare tra i messaggi che riceve o invia dai/ai suoi vicini.
+  Distingue chi gli ha mandato un messaggio e può scegliere a chi mandarlo.
+}
+
+Le \textbf{restrizioni} sono proprietà aggiuntive che limitano l'applicazione di un protocollo, ovvero le condizioni sotto cui
+tale protocollo lavora come ci si aspetta.
+Restrizioni tipiche sono: direzionalità dei link, comunicazione FIFO o unordered, edge and failure tolerance
+(failure detection, limiti di tolleranza, come continuare dopo un fault, ecc.).
+
+Restrizioni sulla reliability:
+  \begin{itemize}
+    \item Fault detection:
+      \begin{itemize}
+        \item edge fault detection: le entità ai capi di un link sono in grado di determinare se
+        un link è non funzionante o se è tornato attivo.
+        \item entity fault detection: ogni entità è in grado di rilevare se uno dei vicini è non funzionante
+        o se è tornato attivo. 
+      \end{itemize}
+
+      \item Restrizioni sui tipi di faults:
+        \begin{itemize}
+          \item \textbf{total reliability}: tutto funziona sempre e per sempre
+          \item \textbf{partial reliability}: possono esserci stati fallimenti in passato, ma non ce ne saranno in futuro
+          \item \textbf{guaranteed delivery}: ogni messaggio viene sicuramente consegnato, ma non ho garanzie sul
+          funzionamento entità
+        \end{itemize}
+  \end{itemize}
+
+Altre restrizioni tipiche sono:
+\begin{itemize}
+  \item connettività: e.g. grafo strongly connected
+  \item conoscenza della rete: conoscenza sul numero di link, nodi e diametro della rete
+  \item delay di comunicazione: bounded se ci sono garanzie sul tempo di ricezione, unbounded altrimenti
+  \item delay unitario: delay costante unitario, escluso in caso di failure
+  \item sincronicità dei clock: tutti i clock sono sincronizzati
+\end{itemize}
+
+\subsection{Complessità}
+Mentre per gli algoritmi sequenziali le uniche misure di complessità sono quella spaziale e quella temporale,
+per gli algoritmi distribuiti la situzione è più complessa.
+In questi algoritmi il tempo di risoluzione è molto importante, mentre lo spazio su ogni nodo è poco interessante.
+Le considerazioni sulla quantità di messaggi scambiati sono il nostro focus principale, dato che le comunicazioni sulla rete
+sono il collo di bottiglia maggiore per questa famiglia di algoritmi; il tempo di esecuzione sulla singola entità è trascurabile
+rispetto al tempo di comunicazione.
+
+A volte conteremo il numero di messaggi scambiati, a volte il numero di bit.
+
+Come quantificare la complessità temporale di questi algoritimi?\\
+Misureremo il tempo impiegato per la risoluzione di un problema come periodo tra l'inizio e la fine della computazione,
+mettendoci nei panni di un osservatore esterno (l'utente).
+
+Idealmente, le unità di tempo che servono per ricevere il risultato, se il sincronismo tra le entità
+fosse totale (\textbf{total synchrony}); il che comporterebbe anche la trasmissione di un messaggio
+in una unità di tempo. In questo caso si parla di \textbf{ideal time complexity}.
+
+Problema: se le entità non sono sincronizzate, il delay di comunicazione non è predicibile.\\
+Soluzione: usiamo il numero di messaggi scambiati ``in fila'' come misura di costo temporale.
+Consideriamo la \textbf{catena di messaggi più lunga}.
+Questa funzione di costo tiene in considerazione l'asincronismo tra i clock delle entità e viene chiamata \textbf{casual time complexity}.
+
+Stiamo completamente ignorando il tempo necessario ai nodi per l'elaborazione, in quanto trascurabile rispetto al tempo di comunicazione.
