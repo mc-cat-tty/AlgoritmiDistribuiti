@@ -346,7 +346,6 @@ Definiamo ora un paio di cose che ci torneranno utili:
 }
 
 
-\subsubsection{Algoritmo di Christofides per TSP}
 L'algoritmo di Christofides per TSP con proprietà triangolare sulla funzione di costo,
 trova una soluzione approssimata cercando un ciclo euleriano, che poi usa per costruire il ciclo hamiltoniano.
 
@@ -395,7 +394,7 @@ Tutti i passaggi sopra elencati sono realizzabili (in tempo polinomiale)? Sì:
   esisterà (nel grafo originale) un arco che li congiunge, indipendentemente dal fatto che sia presente in $E$.
 \end{itemize}
 
-\subsection{Analisi dei Costi}
+\subsubsection{Analisi dei Costi}
 \theobox{
   L'algoritmo di Christofides ha fattore di approssimazione di $\frac{3}{2} = 1.5$.
 }
@@ -453,6 +452,10 @@ soluzione coincide con l'UB.
 
 La struttura della famiglia di grafi che costituisce un input patologico per Euclidean TSP comprende
 un numero dispari di nodi collegati come mostrato in \cref{fig:christofides_pathological}.
+Come detto in precedenza, il problema accetta un grafo \underline{completo}, mentre quello rappresentato in figura non lo è.
+Sono stati infatti rappresentati solamente gli archi di costo 1 e un arco di costo non unitario necessario per la dimostrazione.
+Tutti gli archi omessi hanno un costo pari alla somma degli archi del cammino minimo tra i due nodi (un costo minore non rispetterebbe
+la proprietà triangolare, un costo maggiore non permetterebbe il funzionamento della dimostrazione).
 
 \begin{figure}[h!]
   \centering

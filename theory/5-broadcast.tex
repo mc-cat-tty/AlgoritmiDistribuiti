@@ -11,7 +11,7 @@
 \begin{algorithm}[H]
 \caption{Naive Broadcasting Algorithm}
 \begin{algorithmic}[1]
-\State S = {INITIATOR, SLEEPING, DONE}
+\State S = \{INITIATOR, SLEEPING, DONE\}
 \State
 \State INITIATOR
 \State spontaneously:
@@ -23,7 +23,7 @@
 \State
 \State SLEEPING
 \State on receiving(I):
-\State   \hskip1.0em send(I) to N(x) - {sender}  \Comment{Sender è il nodo da cui ho ricevuto il messaggio}
+\State   \hskip1.0em send(I) to N(x) - \{sender\}  \Comment{Sender è il nodo da cui ho ricevuto il messaggio}
 \State   \hskip1.0em become(DONE)  \Comment{Transitiamo allo stato DONE}
 \State
 \State DONE \Comment{No actions}
@@ -157,9 +157,9 @@ Idea: ogni entità sveglia manda un segnale di wake-up in flooding.
 \begin{algorithm}[H]
 \caption{Wake-up Flooding}
 \begin{algorithmic}[1]
-  \State State $S$ = {ASLEEP, AWAKE}
-  \State $S_\text{init}$ = {ASLEEP}
-  \State $S_\text{term}$ = {AWAKE}
+  \State State $S$ = \{ASLEEP, AWAKE\}
+  \State $S_\text{init}$ = \{ASLEEP\}
+  \State $S_\text{term}$ = \{AWAKE\}
   \State
   \State ASLEEP
   \State spontaneously:
