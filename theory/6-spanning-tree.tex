@@ -1,0 +1,374 @@
+\section{Spanning Tree}
+\defbox{ \textbf{Spanning Tree} $T$ di grafo $G = (V, E)$ è un sottografo aciclico tale che $T=(V, E')$ e $E' \subseteq E$. }
+
+Restrizioni: single init, archi bidirezionali, total reliability e G connesso.
+
+Attenzione. Non vogliamo che ogni nodo conosca o costruisca uno ST.
+Vogliamo che ogni nodo conosca i suoi vicini nello ST. Quindi che abbia una vision \textbf{locale}, non globale.
+
+\subsection{Shout}
+Per prima, cosa l'init invia ai suoi vicini la richiesta di diventare vicini anche nello ST.
+I vicini possono rispondere Y/N.
+Rispondono Y quando non hanno ancora vicini in ST; rispondono N altrimenti:
+non possono accettare più di un vicino in ST perchè altrimenti sull'albero avrebbero più padri.
+
+Terminazione? Quando il nodo ha ricevuto risposta da tutti i suoi vicini.
+Ricorda che un nodo ``richiedente'' (nodo interno allo ST) può avere più risposte Y se ha molteplici figli su ST.
+
+Indichiamo con $N_G$ i vicini di una entità nell'ambiente distribuito e con $N_\textit{ST}$ i suoi vicini
+sullo Spanning Tree; mentre con $Q$ indichiamo una domanda (question) che, ad alto livello corrisponde a
+``vuoi diventare mio figlio sullo ST?''. L'algoritmo Shout è il seguente:
+
+\begin{algorithm}[H]
+\caption{Shout}
+\begin{algorithmic}[1]
+\State $S$ = \{INITIATOR, IDLE, ACTIVE, DONE\}
+\State $S_\text{init}$ = \{INITIATOR, IDLE\}
+\State $S_\text{term}$ = \{DONE\}
+\State
+\State INITIATOR \Comment{Da questo stato parte la radice}
+\State spontaneously:
+\State   \hskip1.0em root = true
+\State   \hskip1.0em parent = nil
+\State   \hskip1.0em $N_\textit{ST}(x) = \emptyset$
+\State   \hskip1.0em send Q to $N_G(x)$
+\State   \hskip1.0em counter = 0 \Comment{Indicherà il numero di vicini nell'ambiente distribuito}
+\State   \hskip1.0em become(ACTIVE)
+\State 
+\State ACTIVE
+\State receiving(Q):
+\State   \hskip1.0em send NO to Q.sender
+\State receiving(YES):
+\State   \hskip1.0em $N_\textit{ST}(x) = N_\textit{ST}(x) \cup \text{YES.sender}$
+\State   \hskip1.0em counter++
+\State   \hskip1.0em if counter = $|N_G(x)|$: become(DONE)
+\State receiving(NO):
+\State   \hskip1.0em counter++
+\State   \hskip1.0em if counter = $|N_G(x)|$: become(DONE)
+\State 
+\State IDLE \Comment{Da questo stato partono tutti gli altri nodi}
+\State receiving(Q):
+\State   \hskip1.0em root = false \Comment{Basterebbe una volta, ma funziona anche se ripetuto, dato che è un'operazione idempotente}
+\State   \hskip1.0em parent = Q.sender
+\State   \hskip1.0em $N_\textit{ST}(x) = N_\textit{ST}(x) \cup \{\text{parent}\}$
+\State   \hskip1.0em counter = 1
+\State   \hskip1.0em send YES to parent
+\State   \hskip1.0em if counter = $|N_G(x)|$: \Comment{Aka il mio unico vicino è parent}
+\State   \hskip1.0em   \hskip1.0em become(DONE)
+\State   \hskip1.0em else: \Comment{Se ho altri vicini propago Q}
+\State   \hskip1.0em   \hskip1.0em send Q to $N_G(x) - \{\text{parent}\}$
+\State   \hskip1.0em   \hskip1.0em become(ACTIVE)
+\end{algorithmic}
+\end{algorithm}
+
+Correttezza e terminazione:
+\begin{itemize}
+  \item $x \in N_\textit{ST}(y) \Rightarrow y \in N_\textit{ST}(x)$: vedi codice relativo all'invio di YES e alla ricezione di YES
+  \item Se $x$ manda YES a y, allora $y \in N_\textit{ST}(x)$ e $y$ è connesso alla radice tramite una catena di YES
+  \item Ogni nodo invia un solo YES tranne la radice, questo garantisce unicità del padre di un nodo
+\end{itemize}
+
+La terminazione è \textbf{locale}, non abbiamo modo di sapere quanto l'intero ST è stato costruito.
+
+Il costo in termini di numero di messaggi è:
+$\text{Messages}(\text{Shout}(G)) = \text{Messages}(\text{Flooding}(G)) + \text{Messages}(\text{Replies}(G))$
+
+Possibili \textit{scenari} su un arco:
+\begin{enumerate}
+  \item \label{scenario1} \texttt{a --Q--> b}, seguito da \texttt{a <--YES-- b}. Non può succedere il contrario, in quanto \texttt{b}, una volta
+  mandato YES, propagherà Q a tutti i vicini escluso \texttt{a}; si veda lo stato IDLE.
+  \item \label{scenario2} \texttt{a --Q--> b}, seguito da \texttt{a <--NO-- b}. \texttt{b} non si è segnato che \texttt{a} gli ha inviato \texttt{Q}
+  (vedi ACTIVE), quindi si ripresenterà la situazione inversa: \texttt{a <--Q-- b} seguito da \texttt{a --NO--> b}. Per un
+  totale di 4 messaggi sull'arco.
+\end{enumerate}
+
+Costo:
+\begin{itemize}
+  \item Lo scenario \ref{scenario1} implica che si formi un arco nello ST. Dati $n$ nodi, gli archi di un ST sono $n-1$: ogni nodo
+  ha un genitore, tranne la radice. Per tali archi circolano 2 messaggi per un totale di $2 (n-1)$.
+  \item Lo scenario \ref{scenario2} si verifica per tutti gli archi restanti, che sono $m - (n-1)$. Su di essi circolano 4 messaggi per un
+  totale di $4 [m - (n-1)]$
+\end{itemize}
+
+Il numero di messaggi totali è:
+\begin{align*}
+  \text{Messages}(\text{Shout}(G)) &\\
+  & = 4 [m - (n-1)] + 2 (n-1) = 4m - 4n + 4 + 2n - 2 =\\
+  & = 4m - 2n + 2 = 2 (2m - n + 1)= 2 \text{Messages}(\text{Flooding}(G))
+\end{align*}
+
+Riusciamo a ridurre il numero di messaggi?
+
+\subsection{Shout+}
+Sfruttando la ridondanza dello scenario \ref{scenario1}, interpretiamo Q come un NO nello stato ACTIVE.\\
+Intuitivamente: se mi re-invia Q, significa che ha appena accettato di essere figlio di un altro nodo.
+
+Modifichiamo lo stato ACTIVE unendo i precedenti receiving(Q) e receiving(NO):
+\begin{algorithm}[H]
+\caption{Shout+}
+\begin{algorithmic}[1]
+\State ACTIVE
+\State receiving(Q): \Comment{Lo considero come un NO inviato dall'altro capo; io stesso evito di inviare NO}
+\State   \hskip1.0em counter++
+\State   \hskip1.0em if counter = $|N_G(x)|$: become(DONE)
+\State receiving(YES):
+\State   \hskip1.0em $N_\textit{ST}(x) = N_\textit{ST}(x) \cup \text{YES.sender}$
+\State   \hskip1.0em counter++
+\State   \hskip1.0em if counter = $|N_G(x)|$: become(DONE)
+\end{algorithmic}
+\end{algorithm}
+
+Nuovi possibili \textit{scenari} su un arco:
+\begin{enumerate}
+  \item \texttt{a --Q--> b}, seguito da \texttt{a <--YES-- b}. Invariato rispetto a prima.
+  \item \texttt{a --Q--> b}, seguito da \texttt{a <--Q-- b}. In questo scenario abbiamo dimezzato i messaggi che circolano.
+\end{enumerate}
+
+Il numero di messaggi per Shout+ è:
+\begin{align*}
+  \text{Messages}(\text{Shout+}(G)) &\\
+  & = 2 [m - (n-1)] + 2 (n-1) = 2m - 2n + 2 + 2n - 2 =\\
+  & = 2m
+\end{align*}
+
+In caso di iniziatori multipli, Shout produce una \textbf{foresta}.
+
+Che ST esce? qualcosa nel mezzo tra BFS e DFS.
+
+\subsection{ST Construction con Traversal}
+% Idk why but we want to explore the graph in dfs fashion
+
+Per applicare la strategia DFT (Depth First Search) sul grafo dobbiamo \textbf{sequenzializzare} la visita.
+Questo non è il modo normale con cui operano i sistemi distributi, però esistono situazioni in cui abbiamo questa necessità.
+Per sequenzializzare la visita usiamo un paradigma chiamato \textbf{token passing}:
+ogni nodo passa il token ad un altro nodo; in ogni istante solamente un nodo detiene il token.
+
+Ogni nodo parte nello stato \textit{unvisited} e termina nello stato \textit{visited}.
+Con questo paradigma, possiamo usare il token per identificare l'unico nodo nello stato \textit{visiting}.
+
+Restrizioni: init singolo, total reliability, bidirezionalità, grafo connesso.
+
+Con il token passing possiamo implementare algoritmi ricorsivi in sistemi distribuiti.\\
+Abbiamo 3 tipi di token:
+\begin{itemize}
+  \item \textbf{forward token} (FT): viene passato ad un vicino x per continuare la visita. Corrisponde alla chiamata ricorsiva DFT(x).
+  \item \textbf{return token} (RT): restituto dal vicino quando viene conclusa la visita.
+  \item \textbf{backedge token} (BT): individua un arco che, durante la visita, porta ad un nodo già visitato.
+  Un \textit{backedge} è quindi un arco che creerebbe un ciclo.
+\end{itemize}
+
+Algoritmo:
+\begin{enumerate}
+  \item quando ricevo il FT la prima volta memorizzo il mittente (padre in ST), invio il FT ad un vicino non esplorato. Poi attendo.
+  \item quando ricevo il RT inoltro il FT al prossimo vicino non esplorato , se ne sono rimasti. Se sono finiti i vicini propago il RT al nodo che mi ha scoperto.
+  \item quando ricevo di nuovo un FT, significa che un figlio nello ST, mi ha propagato il FT, quindi si sta completando un ciclo.
+  Propago al mittente il BT e quel figlio viene segnato come visitato.
+  \item Simmetricamente, se in seguito all'invio del FT ricevo un BT token, vuol dire che stavo cercato di propagare FT ad un mio antenato;
+  procedo come se avessi ricevuto un RT.
+\end{enumerate}
+
+Tolti i back-edge, rimangono gli archi su cui è stato propagato un FT.
+Lo ST è così composto:
+\begin{itemize}
+  \item radice: inizializattore.
+  \item padre di x: nodo dal quale ha ricevuto il FT per primo.
+  \item figli di x: i vicini che non sono conessi con un backedge.
+\end{itemize}
+
+Terminazione? ogni nodo conosce quando finisce la visita del suo sottoalbero.
+Quindi la radice conosce quando la costruzione di ST termina.
+
+Se desideriamo una \textbf{terminazione globale}, una volta finito l'intero ST la radice
+può propagare il messaggio di fine seguendo l'albero appena costruito.
+
+% Come implementarlo? TODO pseudocodice
+
+% \begin{verbatim}
+% State S = {INITIATOR, IDLE, VISITED, DONE}
+% Sinit = {INITIATOR, IDLE}
+% Sterm = {DONE}
+
+% VISIT (unvisited, isInitiator) {
+%   if |unvisited| > 0 {
+%     next = pick(unvisited)
+%     unvisited = unvisited - {sender}
+%     send FT to next
+%     become(VISITED)
+%   }
+%   else {
+%     if not isInitiator {
+%       send RT to sender
+%     }
+%     become(DONE)  // I nodi intermedi terminano dopo aver visitato tutti i vicini
+%   }
+% }
+
+% INITIATOR
+% Spontenously TODO
+
+% IDLE
+% onReceive(FT)
+
+% VISITED
+% receiving(FT)
+%   unvisited = unvisited - {sender}
+%   send BT to sender
+
+% receiving(BT)
+%   TODO da qui in poi 
+% \end{verbatim}
+
+Costo in termini di messaggi? \\
+Mandato un FT su un link, sullo stesso link, possono passare un RT o un BT, non entrambi. Quindi:
+$$ \text{Messages}(\text{DFT}_\text{distributed}) = 2m $$
+
+È dimostrabile che non posso pagare meno di così: sfrutto la dimostrazione fatta per il broadcast (ogni arco deve
+vedere almeno un messaggio, in questo caso il FT, altrimenti rimerrebbe parte del grafo inesplorata), a cui aggiungiamo
+la informazioni di ``conferma'' (RT e BT). Quindi: $$ \text{DFT}_\text{distributed} \in \Omega(m) $$
+
+Costo in termini temporali? \\
+Il protocollo è stato pensato per sequenzializzare la visita con token passing; un solo nodo alla volta
+detiene il token, conoscendo il numero di archi attraversati abbiamo che:
+$$ \text{Time}(\text{DFT}_\text{distributed}) = 2m $$
+
+Possiamo fare di meglio? \\
+Il lower bound della complessità temporale è $\text{Time}(\text{DFT}_\text{distributed}) \geq n-1$,
+ovvero una catena di messaggi lunga almeno quanto i nodi, esclusa la radice.
+
+Possiamo velocizzarlo? \\
+Possiamo cercare di parallelizzare tutti i messaggi che non contribuiscono alla visita di un nuovo nodo, come quelli mandati sui backedge.
+
+Come evitare di mandare il BT sui backedges? \\
+Appena ricevuto il FT, il nodo propaga ai suoi vicini il messaggio Visited, per avvisarli che è appena stato visitato, poi attende
+la ricenzione di Ack da \underline{tutti} i suoi vicini.
+Ogni vicino risponde con un Ack per confermare di aver ricevuto l'informazione. In questo modo, so che ogni nodo
+da cui ho ricevuto Visited può essere eliminato dai vicini da visitare.
+
+Perchè serve l'Ack di tutti i vicini prima di procedere? \\
+Il problema è che, in caso di archi con latenze eterogenee, quando un nodo propaga il Visted,
+uno dei suoi vicini potrebbe ricevere il FT da una catena più lugna di nodi, prima che gli arrivi e registri il Visited.
+Tale vicino inoltrebbe quindi il FT al nodo già visitato, vanificando il nostro sforzo di ridurre la complessità temporale
+dell'algoritmo.
+Quindi per mitigare il problema, procediamo con il protocollo appena arrivano gli ack da tutti i vicini.
+
+Nota che un nodo può ricevere più notifiche di Vistited dai suoi vicini.
+
+Per ogni link possono ora passare al massimo 4 messaggi: Visited, Ack, FT, RT.\\
+Ricorda: $n-1$ sono gli archi di un albero con $n$ nodi.
+
+Tutti gli archi dello ST vedono uno scambio di Forward e Return token (catena lunga 2 ripetuta $n-1$ volte);
+in più, ogni nodo propaga Visited e attende Ack prima di continuare (catena lunga 2, ripetuta $n$ volte):
+$$ \text{Time}(\text{DFT}_\text{no backedge}(G)) =
+\underbrace{2(n-1)}_\text{FT e RT tokens} + \underbrace{2n}_\text{Visited e Ack} = 2n - 2 + 2n = 4n-2 \in O(n) $$
+
+Nota che: i Visited-Ack viaggiano in parallelo tra i vicini di un nodo ma non  rispetto alla catena dei token,
+ecco perchè i due costi si sommano.
+
+Abbiamo migliorato rispetto a prima perchè ora il costo temporale dipende dal numero di nodi e non dal numero di archi.
+Ricorda che in un grafo completo può fare una grade differenza, siccome $m = n^2 - n$.
+
+Questo a discapito del numero di messaggi, che diventano:
+$$ \text{Messages}(\text{DFT}_\text{no backedge}(G)) \leq 2(n-1) + 2(n-1) + 4(m - (n-1))= 4m \in O(m)$$
+
+FT e RT vengono inviati sugli $n-1$ archi dello spanning tree.\\
+La catena Visited-Ack passa 1 volta (2 messaggi totali) sugli $n-1$ archi di ST: ricorda che non è necessario propagare visited
+al nodo che ci ha scoperti, ovvero il padre nello ST. 
+La catena Visited-Ack passa 2 volte (4 messaggi totali) sugli archi che non appartengono allo ST, ovvero i backedge;
+questo avviene perchè entrambi i nodi si scambieranno che sono stati visitati dal FT.
+
+Shout+ vs DFT:
+Shout+ fornisce generalmente alberi più bassi rispetto a DFT; mentre la soluzione della DFT ha tipicamente un diametro maggiore.
+
+Se volessimo l'albero più basso possibile, ovvero con il diametro più piccolo (stile BFS), dovremmo determinare
+il centro del grafo e costruire il BFS tree lì radicato; entrambe le operazioni sono molto costose.
+
+Cosa succede se non abbiamo un unico iniziatore?\\
+Possiamo applicare due strategie: ST multipli e costruzione selettiva. In entrambi i casi abbiamo la \textbf{restrizione aggiuntiva}
+di ID univoci. Soluzioni:
+\begin{itemize}
+  \item Spanning tree multipli: ogni iniziatore costruisce il suo ST con messaggi marcati dal suo ID univoco.
+  Ogni nodo apparterrà a $K$ spanning tree corrispondenti agli $K$ inizializzatori.
+  Anche i costi (messaggi) visti in precedenza verranno moltiplicati per un coefficiente $K$.
+  \item Costruzione selettiva: Potrei, dati tutti gli ST, sceglierne arbitrariamente uno, ad esempio quello con l'identificativo più piccolo.
+  Ogni iniziatore costruisce un suo ST con messaggi marcati come prima; le altre entità propagheranno solamente
+  i messaggi con l'ID minore visto fino a quel momento (sopprimendo gli altri), portando avanti la costruzione di un solo ST.
+\end{itemize}
+
+Il secondo metodo funziona come una sorta di \textbf{leader election}.
+
+Come vedremo: i protocolli di election sono impossibili da realizzare se le entità sono tutte deterministche e indistinguibili
+(non dotate di un identificativo univoco). Tutte le dimostrazioni si basano sul fatto che tutte le entità si comporteranno
+allo stesso modo, comportamento in contrasto con l'esigenza iniziale di eleggere un leader.
+
+\obsbox{ Con il secondo metodo le entità potrebbero dover eseguire il protocollo più volte: il loro stato
+interno viene alterato da un dato ID e, se a seguire arriva un ID minore, serve una sorta di reset.
+Serve inoltre una notifica di terminazione per determinare quando almeno uno ST è stato completato.
+}
+
+Nel caso medio Idea 2 abbassa i costi, in quello peggiore come Idea 1.
+
+Reminder: rooted trees have a root, each node knows its parent and its children;
+unrooted trees do not have a root, and each node just knows its neighbors.
+
+Lavoriamo sul caso degli unrooted trees.\\
+Restrizioni: link bidirezionali, connettività, link FIFO (ordinamento preservato), affidabilità totale, conoscenza della topologia
+(conoscenza dei propri vicini).
+
+\subsection{Saturazione}
+E.g. problema del \textbf{minimum finding}: ad ogni nodo viene associato un valore e si vuole trovare il minimo tra tali valori.
+Alla fine della computazione ogni nodo deve sapere se il suo valore è o non è il minimo.
+
+Dati $N(x)$ vicini di un nodo $x$, ogni nodo $x$ aspetta $N(x)-1$ messaggi e propaga il minimo locale sul link rimanente.
+Il minimo locale è il minimo tra il proprio valore e i valori ricevuti dai vicini.
+
+Le foglie sono i primi nodi a mandare il proprio valore sull'unico link a cui sono connessi.
+
+Gli ultimi due nodi dell'albero a ricevere il valore, riceveranno un messaggio da tutti i propri vicini.
+Questi due nodi calcolano il minimo globale e lo propagano indietro a tutti i nodi dell'albero.
+Questi due nodi si chiamano \textbf{nodi saturati}, siccome ricevono il valore da tutti i vicini.
+
+Attenzione: i nodi saturati non si trovano necessariamente nel centro dell'albero, possono essere spostati verso le foglie dipendentemente
+dalla velocità dei link.
+
+Ogni nodo sa che prima trasmette il minimo calcolato localmente, poi gli arriverà il minimo globale; di conseguenza conosce quando
+la procedura è finita e se il suo ID è il minore.
+
+\theobox{La saturazione completa (full saturation) può essere raggiunta autonomamente indipendentemetne dal numero di iniziatori.}
+
+Wrapping up, visione completa della procedura:
+\begin{enumerate}
+ \item \textbf{Wake up stage}: gli iniziatori mandano un messaggio di sveglia; in un tempo finito tutte le entry si sveglieranno. Dato che i canali
+ sono FIFO, se l'iniziatore è foglia, può inviare subito dopo il proprio valore.
+ \item \textbf{Saturation stage}: iniziato dalle foglie, consiste nella propagazine del proprio valore.
+ \item \textbf{Resolution stage}: iniziato dalle entità saturate. Consiste nella propagazione del messaggio di notifica.
+\end{enumerate}
+
+\defbox{ \textbf{Lemma.} Esattamente due entità, tra loro vicine, diventano saturate. }
+
+In base all'esecuzione le entità saturate possono essere diverse.
+
+Message complexity:
+\begin{enumerate}
+  \item \textbf{Activation}: il caso peggiore è quando ogni nodo è iniziatore. Ogni link vede due messaggi. Siamo su un albero ($m = n-1$): $\leq 2(n-1)$
+  \item \textbf{Saturation}: su ogni link passa 1 messaggio ad eccezione del link tra i due nodi saturati, che vede un messaggio in più: $(n-1) + 1 = n$
+  \item \textbf{Resolution}: propagazione su ogni link ad eccezione del link tra i nodi saturati: $n-2$
+\end{enumerate}
+
+Totale: $\leq 2(n-1) + n + n - 2 = 4n - 4$
+
+Takeaway: è facile lavorare sugli alberi, ma nella pratica non sono robusti ai fallimenti.
+
+Cit. la saturazione più esser usata per risolvere un ampio insieme di problemi che prevedano la valutazione di una funzione distribuita:
+questo framework prende il nome di \textbf{Distributed Function Evaluation}.
+
+Vedi: \url{https://en.wikipedia.org/wiki/MapReduce}
+
+\subsection{Convergecast}
+Su alberi radicati, dove esiste una nozione di alto e basso, il minimo può essere calcolcato con \textbf{Convergecast}.
+Le foglie inviano al padre il proprio valore. Le foglie interne calcolano il minimo locale e lo propagano verso l'alto (la radice).
+La radice arriva ad avere il minimo. Re-invia il minimo alle foglie.
+
+Tip. I protocolli covergecast si visualizzano come onde che viaggiano verso l'alto e poi verso il basso.
+
+\theobox{ Senza ID univoci è impossibile implementare un protocollo deterministico di covergecast su unrooted trees. In generale,
+senza ID univoci è impossibile radicare un albero non radicato. }
