@@ -1,0 +1,332 @@
+\section{Leader Election}
+\subsection{Leader Election su Alberi}
+Nota: i nomi degli algoritmi del libro possono essere diversi a quelli presenti il letteratura; a volte sono rinominati da Santoro.
+
+\defbox{
+  \textbf{Leader Election}: portare un ambiente distribuito da una config iniziale (chiamata \textit{available})
+  in cui tutte le entità sono nello stesso stato (e hanno lo stesso ruolo) ad una config finale in cui tutte le entità
+  sono \textit{follower} ad eccezione di una: il \textit{leader}.
+  
+  La leader election comporta la rottura della simmetria iniziale.
+}
+
+\obsbox{ Non abbiamo restrizioni su quale e quante entità debbano iniziare la computazione, nè tantomeno su quale
+di esse debba diventare il leader. }
+
+Restrizioni: bidirezionale, grafo connesso, no failures.
+
+\theobox{
+  Angluin 80: Il problema della leader election è irrisolvibile, con protocolli deterministici, se le entità non hanno ID univoci.
+  Senza ID univoci, con protocolli deterministici, non si riesce a rompere la simmetria tra i nodi.
+}
+
+Tutte le prove di questo teorema si basano sul fatto che in rete di entità anonime (ovvero senza ID), dato lo stesso stato iniziale,
+ogni entità si comporterà allo stesso modo; sarà quindi impossibile rompere la simmetria.
+
+Leader election su \textbf{alberi radicati} costa 0 messaggi. $O(n)$ messaggi per la notifica agli altri nodi.
+Ci basta scegliere la radice come leader e tutti gli altri nodi come follower.
+
+Su \textbf{alberi non radicati} eleggere il leader può essere fatto prendendo l'ID minimo con la tecnica della saturazione.
+Numero di messaggi calcolati prima: $4n-4$. Ogni nodo che non abbia il \textbf{valore minimo} è follower.
+
+In alternativa, su alberi non radicati è possibile eleggere il leader applicando la saturazione e scegliendo il \textbf{nodo saturato con
+valore minimo}. In questo modo il meccanismo di elezione si ridurrebbe ai due nodi saturati invece che all'intero albero.
+In più, come prima, la saturazione ha l'effetto collaterale (positivo) di permettere ad ogni nodo di distinguere il padre e i figli;
+il padre viene individuato come il nodo a cui viene inviato il messaggio, mentre i figli i nodi da cui viene ricevuto.
+
+L'elezione tra i due nodi saturati comporta uno scambio aggiuntivo di 2 messaggi: quelli necessari a determinare chi abbia ID minore
+tra i due, alzando la complessità dei messaggi da $4n-4$ a $4n-2$. Sembrerebbe quindi svantaggioso guardando solo il numero di messaggi\dots
+
+In realtà, facendo un'analisi con \textbf{granularità più fine} --- considerando il \textbf{numero di bit scambiati} invece che il numero di messaggi ---
+si scopre che il secondo metodo è più efficiente del primo, applicando l'ottimizzazione che consiste nell'inviare messaggi vuoti per
+raggiungere la saturazione, scambiandosi solamente gli ultimi 2 messaggi con valore.
+
+Infatti, l'elezione del minimo (descritto appena sopra) prevede lo scambio degli $n$ messaggi di elezione contenenti un valore,
+mentre i restanti messaggi sono \textbf{notifiche}.
+Chiamiamo $C$ il numero minimo di messaggi necessari per discriminare il tipo di messaggio, la leader election con saturazione del minimo
+comporta:
+\begin{align*}
+& \text{bits num} \leq
+\overbrace{[n + (n-2)]}^\text{Saturation + resolution msg number}
+\underbrace{(C + \log_2 \text{MaxID})}_\text{Saturation msg bits} +
+\overbrace{C}^\text{Empty msg bits}
+\underbrace{2(n-1)}_\text{Worst-case activation msg number} = \\
+& = (2n-2) (C + \log_2 \text{MaxID}) + C (2n-2) \in O(n [C + \log_2 \text{MaxID}])
+\end{align*}
+
+I $C$ bit presenti nei messaggi sono necessari per distinguere il \underline{tipo} di messaggio (e.g., tra saturation e resolution).
+Il primo termine modella il numero di bit necessari a distinguere il tipo di messaggio più i bit necessari 
+per codificare il valore nel propagato.
+Il secondo termine modella il numero di messaggi necessari per attivazione e risoluzione.
+
+Mentre il secondo metodo prevede principalmente lo scambio di notifiche: 
+\begin{align*}
+\text{bits num} & \\
+& = \overbrace{2}^\text{Final values exchange} (C + \log_2 \text{MaxID}) +
+\overbrace{[(n-2) + 2(n-1) + n]}^\text{Notifications for sautration, resulution and activation} C \\
+& = 2 (C + \log_2 \text{MaxID}) + C [4n - 2] \in O(\log_2 \text{MaxID} + Cn)
+\end{align*}
+
+Esiste una forte relazione tra Spanning Tree (ST) e Leader Election (LE).
+Dato uno ST radicato, la leader election può essere fatta con $O(n)$ messaggi per la notifica.
+Dato il leader di un grafo, lo ST può essere costruito con $O(m)$ messaggi, facendo partire la costruzione dal leader.
+
+\subsection{Leader Election su Ring}
+\defbox{ \textbf{Ring}: $n$ nodi, $m$ archi. $n = m$. Topologia simmetrica. Ogni nodo ha 2 vicini distinti e distinguibili
+dal nodo stesso (senso dell'orientamento). }
+
+Perchè proprio i ring? topologia sparsa e simmetrica, con pochi link, ma comunque ridondante alla rottura di al più 1 link.
+Un tempo implementata fisicamente, oggi implementata virtualmente (vedi virtual rings).
+
+\subsubsection{All the Way}
+\textbf{All the Way} [Le Lann 1977]: algoritmo di leader election su ring.
+
+Restrizioni:
+\begin{itemize}
+  \item funziona su link uni- e bi- direzionali
+  \item ID univoci
+  \item affidabilità totale
+  \item local orientation: non serve un senso globale di dx/sx. Ogni entità conosce i suoi due link come: ``one way'' e ``the other way''.
+\end{itemize}
+
+Idea semplice: ogni entità invia il proprio ID in una direzione. Ogni nodo vede gli ID di tutte le entità; il minimo ID tra quelli visti
+corrisponde a quello del leader. Ogni nodo sa se è il leader o un follower appena viene determinato un minimo comune.
+
+Il problema si sposta sulla \textbf{terminazione} dell'algoritmo. Un nodo non sa quando è terminata la determinazione del minimo.
+Soluzioni:
+\begin{itemize}
+ \item aggiungiamo una conoscenza a priori del numero di nodi $n$ del ring.
+ \item in alternativa, aggiungiamo la restrizione che i link siano FIFO: l'ordine di invio dei messaggi viene preservato dal link.
+ La ricezione di un messaggio comporta in questo caso il wakeup di un nodo, che invia prima il proprio valore, poi fa il forward di quelli ricevuti.
+  In questo caso un nodo $x$ invia il proprio $\text{ID}_x$ e, quando gli torna indietro, significa
+  che $x$ ha visto tutti gli ID degli altri nodi (il cammino per tornare su se stesso è il più lungo possibile).
+\end{itemize}
+
+
+Come implementare la conoscenza di $n$?\\
+Se vogliamo evitare di impostarlo a priori, possiamo incorporare un contatore nel messaggio contenente $\text{ID}_x$.
+Il contatore viene incrementato ogni volta che passa per un nodo.
+Un nodo ha conoscenza del numero di nodi del ring quando torna il messaggio con il proprio ID; da questo messaggio ricava il numero
+di nodi che il messaggio ha attraversato. Successivamente, attende finchè non riceve quel numero di IDs prima di poter dedurre se
+il nodo è follower o leader: servirà quindi un secondo contatore nel nodo che tiene traccia del numero di IDs che ha visto fino a quel
+momento.
+
+% TODO: codice
+
+Analizziamo ora i costi.
+
+\textbf{Message Complexity}.\\
+Ogni messaggio deve attraversare tutti gli $n$ nodi del ring.
+Ogni nodo genera un messaggio.
+Quindi $$ \text{Messages}(\text{AllTheWay}(R)) = O(n^2) $$
+
+Ogni messaggio contiene un ID e un contatore dei nodi. Il contatore non avrà mai un valore superiore a quello dell'ID, sotto l'assuzione
+che gli ID vengano creati da 1 a $\max (\text{ID})$, quindi la dimensione del messaggio sarà $2 \log \max (\text{ID}))$.
+Quindi il numero totale di bit scambiati sarà: $$ \text{Bits}(\text{AllTheWay}(R)) = O(n^2 \log \max (\text{ID})) $$
+
+\textbf{Time complexity}.\\
+La catena più lunga nel caso peggiore è quella in cui esiste un solo iniziatore.
+Il messaggio dell'iniziatore $i$ attraversa tutto il ring, svegliando man mano i nodi.
+Il suo messaggio viene, dopo aver completato un giro ($n$ time units), torna a $i$ e viene trattenuto:
+a questo punto sono rimasti in coda gli $n-1$ messaggi degli altri nodi, che devono continuare a girare sul ring finchè non tornano
+dai rispettivi nodi. Costo totale:
+$$ \text{Time}(\text{AllTheWay}(R)) = 2n-1 \in O(n) $$
+
+Nel caso migliore tutti i nodi si svegliano insieme e in un ciclo completo il problema viene risolto.
+
+\subsubsection{As far as it can (LCR)}
+Cerchiamo di ottimizzare \textit{All The Way} con \textit{As far as it can} [LCR --- Lang, Chang, Roberts, 1979]. \\
+Idea: ogni nodo fa \textbf{avanzare solamente il valore minimo} ricevuto fino a quel momento. \\
+Assunzioni: iniziatori multipli o iniziatore singolo (garantire l'univocità dell'iniziatore è difficile) \\
+Terminazione: il nodo che riceve un messaggio con il suo ID all'interno sa di essere il leader, siccome il valore è sopravvissuto ad
+un intero giro del ring. Tale nodo sa di essere il leader, deve inviare una notifica agli altri nodi che essi non sono stati eletti. \\
+
+% TODO codice
+
+Stesse restrizioni di \textit{All The Way}, non è necessario conoscere la dimensione del ring $n$.
+
+\textbf{Terminazione e correttezza}: un nodo sa di essere il leader quando riceve il suo ID, terminazione locale. La terminazione
+globale si raggiunge notificando agli altri nodi l'avvenuta ``elezione''.
+
+\textbf{Message complexity}.
+
+Worst Case. \\
+Ragioniamo nel caso di comunicazione unidirezionale.
+Caso sincrono in cui tutti siano iniziatori e gli ID disposti in ordine crescente nello stesso senso del senso di propagazione
+(e.g. senso orario).
+Ad ogni time unit viene fermato solo un ID, da quello più grande a quello più piccolo.
+Quindi\dots alla prima time unit girano $n$ messaggi, poi uno smette di essere propagato e ne girano $n-1$, poi $n-2$, fino ad arrivare a $1$. \\
+Somma dei primi $n$ numeri naturali, ovvero formula di Gauss, a cui aggiungiamo $n$ messaggi di notifica:
+$$ \text{Messages}(\text{AsFarAsItCan}(R)) = \frac{n (n+1)}{2} + n \in O(n^2) $$
+
+% TODO diagramma
+
+Best case. \\
+Singolo iniziatore coincidente al leader. $2n \in O(n)$ messaggi considerando le notifiche.
+
+\textbf{Time complexity}.
+
+Message chain worst case: iniziatore appena dopo (nel senso di propagazione) il futuro leader. \\
+Per svegliare il leader: $n-1$ \\
+Per far tornare il minimo al leader: $n$ \\
+Per notificare l'elezione: $n$ \\
+Numero totale di messaggi sequenziali (che si traducono in unità di tempo):
+$$ \text{Time}(\text{AsFarAsItCan}(R)) = n + (n-1) + n = 3n - 1 \in O(n) $$
+
+Ottimizzazione: \textbf{Controlled Distance} [HS --- Hirschberg, Sinclair 1980]. \\
+Assunzioni: \textbf{bidirectional links}, total reliability, local orientation, IDs univoci. \\
+Idea: lavorare per passi, in ogni stadio avere ogni nodo nello stato candidate o defeated. \\
+Pro: non richede la conoscenza della dimensione del ring. \\
+
+All generico stadio $i$:
+\begin{enumerate}
+ \item Ogni candidato manda un messaggio con il suo ID in entrambe le direzionali.
+ \item Il messaggio ha una distanza massima che cresce in modo esponenziale con il progredire dello stadio ($d = 2^i$), oppure può fermarsi
+ nel caso in cui in incontri un ID più piccolo del suo.
+ \item Se il messaggio non incontra un ID più piccolo viene rimandato indietro a chi lo ha originato.
+ \item Un candidato a cui ritornano indietro i messaggi da entrambe le direzioni sopravvive allo stadio attuale come candidato e prosegue
+ allo stadio successivo.
+\end{enumerate}
+
+Un nodo se riceve un messaggio con ID minore del priorio viene \textbf{sconfitto} (passive state) e propaga tale messaggio in avanti;
+se l'ID contenuto nel messaggio è maggiore di quello del nodo, il messaggio viene fermato.\\
+Se un nodo riceve indietro i messaggi inviati da entrambe le parti continua ad essere un leader candidato, sopravvive allo stadio attuale. \\
+Se un nodo invia un messaggio ad una distanza così alta che torna indietro dal lato opposto, significa che lui è il leader;
+infatti è sopravvissuto ad un intero giro del ring. \\
+Il leader deve notificare agli altri nodi che è stato scelto un leader, gli altri nodi non hanno modo di sapere che è stato eletto altrimenti. \\
+
+Come distinguere se il messaggio è back (rimbalzato su un nodo) o un forth tornato indietro? \\
+Il messaggio nasce taggato come forth e viene \textbf{taggato} come back appena un nodo decide di rispendirlo indietro. \\
+
+Nota: ogni nodo ha un proprio stadio indipendente dagli altri nodi, lo stadio non è globale. \\
+Nota: un nodo che riceve un ID più alto del suo non risponde al mittente con un messaggio di back (come detto prima, lo stoppa),
+in modo tale che il mittente rimanga in stato di attesa senza spammare messaggi. Se il nodo era dormiente viene svegliato
+da quel messaggio, per poi iniziare a inviare il proprio ID.
+
+% TODO animazione
+
+Perchè è una soluzione migliore della precedente? \\
+Con la distanza crescente la catena massima diventa logaritmica nel numero di nodi.
+In un tempo (un numero di stadi) logaritmico nel numero di nodi riesco a determinare sicuramente il leader.
+
+% Pseudocode.
+
+% State S = {ASLEEP, CANDIDATE, DEFEATED, FOLLOWER, LEADER}  // Uno stato in più rispetto a prima, so di non essere il leader ma inizio a lavorare
+% Sinit = ASLEEP
+% Sterm = FOLLOWER, LEADER
+
+% ASLEEP
+% Spontanously
+%   INITIALIZE
+%   become(CANDIDATE)
+
+%   Receiving('Forth', ID, recvd_limit)
+%   if ID < id(x): // Never ID = id(x) from IDs uniqueness
+% TODO: continue pseudocode
+
+% Nota: quando sono in CANDIDATE non posso riceve il back di un altro nodo, siccome il back richiede che prima il forth sia passato;
+% al passaggio del forth l'esito può esssere defeated o leader.
+
+Terminazione? \\
+sì, l'ID più piccolo riuscirà a girare tutto il ring battendo gli altri e diventanto il leader.
+Infatti, ad ogni stadio l'ID più piccolo gira sul ring per una certa distanza definita da \textit{limit}, non
+viaggerà mai meno siccome è il più piccolo. Questa distanza aumenta ad ogni stadio fino a raggiungere $n$.
+Ad un certo stadio, l'inviatore riceverà il suo stesso messaggio dalla direzione opposta.
+
+\textbf{Message complexity}. \\
+Abbiamo pensato a questo algoritmo per evitare il numero quadratico di messaggi.
+
+Dato un candidato al tempo $i$, il numero massimo di messaggi generati è:
+$$
+\underbrace{2}_\text{direzioni destra e sinistra} \cdot
+\underbrace{2}_\text{back and forth} \cdot
+\underbrace{2^i}_\text{distanza massima per messaggio} = 4 \cdot 2^i
+$$
+
+Quanti candidati posso avere al max al tempo $i$?\\
+Al tempo 0, nel caso peggiore ho tutti gli $n$ nodi candidati.\\
+Se sono candidato arrivato al tempo $i$, vuol dire che al passo precedente ho mandato $2^{(i-1)}$ messaggi.
+Se sono sopravvissuto fino a quel punto significa che gli altri non hanno ID minore, sono stati sconfitti i vicini alla distanza
+$2^{(i-1)}$ a destra e a sinistra al passo precedente.
+Il nodo più vicino sarà a distanza $\textit{min dist} = 2^{i-1}+1$.
+Il caso peggiore è quello pari; nel caso dispari avrò due nodi defeated contigui (\dots-candidate-defated-defeated-candidate-\dots).
+
+% TODO diagram.
+
+Il conteggio del numero massimo di candidati sopravvissuti è quindi: $\textit{max candidates} = \frac{n}{\textit{min dist}}$
+
+Cosa succede se rimane una parte frazionaria minore di \textit{max candidates} (a.k.a la divisione non da risultato intero)? \\
+Come nel caso dispari, quello spazio non potrà contenere candidati siccome la distanza minima non è sufficiente.
+Numero max candidati al tempo i diventa quindi: $\textit{max candidates} = \lfloor \frac{n}{\textit{min dist}} \rfloor$.
+
+% TODO diagram
+
+Nel caso peggiore, il numero massimo di messaggi \underline{per stadio} è il numero max di messaggi per candidato allo stadio $i$
+per il numero massimo di candidati allo stadio $i$:
+$$
+4 \cdot 2^i \cdot \lfloor \frac{n}{2^{i-1}+1} \rfloor =
+8 \cdot 2^{i-1} \cdot \lfloor \frac{n}{2^{i-1}+1} \rfloor \leq
+8n \cdot \underbrace{\frac{2^{i-1}}{2^{i-1}+1}}_{<1} \leq 8n \in O(n)
+$$
+
+Quanti step al massimo? \\
+Raddoppio sempre la distanza, quindi un messaggio completa un giro al massimo con circa
+$\log_2(n)$ stadi.
+Per la precisione, sappiamo che il leader è il nodo che riesce a inviare il suo messaggio più lontano, dato che il suo 
+ultimo messaggio gli torna indietro. Cerchiamo uno stadio $s$ tale per cui $2^s \geq n \rightarrow s \geq \log n$.
+Il $s$ più piccolo per cui si avvera è: $s = \lceil \log n \rceil$.
+Il \underline{numero di stadi} è $\lceil \log n \rceil + 1$.
+Il più 1 serve perchè gli stadi iniziano da 0.
+
+Numero massimo di messaggi totali: sommiamo sugli stadi. \\
+Max messaggi allo stadio 0: $4n$. 4 messaggi (dx e sx, sia back che forth) per ogni nodo tra gli $n$ attivi. \\
+Al generico stadio $1 \leq i \leq \lceil \log n \rceil - 1$: $\leq 8n$ \\
+All'ultmo stadio $\lceil \log n \rceil$: $2n$. Entrambi i messaggi del leader che completano un giro. \\
+Notifica: $n$. In una sola direzione. \\
+
+Numero totale di messaggi:
+$$
+4n + 2n + n + \sum_{i=1}^{\lceil \log n \rceil - 1} 8n = 7n + 2n + n + 8n (\lceil \log n \rceil - 1) = 7n + 8n (\lceil \log n \rceil - 1) \in O(n \log n)
+$$
+
+\subsection{Universal Election Protocol}
+Vorremmo un protocollo che funzioni su ogni rete, senza restrizioni sulla topologia.
+
+\subsubsection{FloodMax}
+FloodMax protocol, da \textit{Distributed Algorithms} di Lynch.
+
+Nota: in questa implementazione eleggiamo il nodo con l'ID massimo.
+
+Restrizioni: link bidirezionali, ID distinti, grafo connesso, canali FIFO, no failures, le entità conoscono il \textbf{diametro del grafo}
+o un suo upper bound (nuovo vincolo) che chiamiamo genericamente $d$. Un UB (a volte molto largo) è sicuramente il numero $n$ di nodi.
+
+Idea: flooding del max ID nella rete.
+
+Ogni nodo mantiene il massimo ID visto fino a quel momento (inizialmente il proprio).
+L'algoritmo funziona in \textbf{round}:
+\begin{itemize}
+  \item ogni nodo propaga il maxID ai vicini e attende il loro valore
+  \item i vicini rispondono con il maxID visto da loro fino a quel momento
+  \item il nodo calcola il massimo
+\end{itemize}
+
+Dopo $d$ round il protocollo termina; il nodo che ha ID uguale a maxID è il leader.
+Nota che i messaggi contengono al loro interno il round a cui sono associati.
+
+Nel caso sincrono (aka tutti i nodi partono insieme), al tempo $i$, ogni nodo sa qual'è l'ID più grande a distanza $i-1$. \\
+Mi serve che i nodi siano allineati prima di procedere al prossimo round. \\
+Mi fermo dopo $d$ round, quando ho la garanzia che anche i nodi più marginali abbiano ottenuto il massimo di tutta la rete,
+racchiusa entro la distanza $d$.
+
+Problema: se il sistema è asincrono devo aggiungere la sincronizzazione sul round. Se ricevo un messaggio di un round più avanti di quello
+che mi aspetto, lo lascio nella coda dei messaggi non letti.
+
+Correttezza: ad ogni round $r$ il maxID raggiunge tutte le entità entro la distanza $r$ dal leader; questo è possibile solamente grazie al
+meccanismo di sincronizzazione.
+
+\textbf{Message Complexity}.
+Per ogni round, 2 messaggi per link, per il numero di round: $$ \text{Messages}(\text{FloodMax}(G)) = 2m \cdot d $$
+
+\textbf{Time Complexity}.
+La catena più lunga di messaggi è quella che propaga l'ID del leader tra i due nodi più distanti, quindi distanti $d$:
+$$ \text{Time}(\text{FloodMax}(G)) = d $$
