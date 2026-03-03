@@ -43,7 +43,7 @@ raggiungere la saturazione, scambiandosi solamente gli ultimi 2 messaggi con val
 
 Infatti, l'elezione del minimo (descritto appena sopra) prevede lo scambio degli $n$ messaggi di elezione contenenti un valore,
 mentre i restanti messaggi sono \textbf{notifiche}.
-Chiamiamo $C$ il numero minimo di messaggi necessari per discriminare il tipo di messaggio, la leader election con saturazione del minimo
+Chiamiamo $C$ il numero minimo di bit necessari per discriminare il tipo di messaggio, la leader election con saturazione del minimo
 comporta:
 \begin{align*}
 & \text{bits num} \leq
@@ -173,6 +173,7 @@ Per notificare l'elezione: $n$ \\
 Numero totale di messaggi sequenziali (che si traducono in unità di tempo):
 $$ \text{Time}(\text{AsFarAsItCan}(R)) = n + (n-1) + n = 3n - 1 \in O(n) $$
 
+\subsubsection{Controlled Distance (HS)}
 Ottimizzazione: \textbf{Controlled Distance} [HS --- Hirschberg, Sinclair 1980]. \\
 Assunzioni: \textbf{bidirectional links}, total reliability, local orientation, IDs univoci. \\
 Idea: lavorare per passi, in ogni stadio avere ogni nodo nello stato candidate o defeated. \\

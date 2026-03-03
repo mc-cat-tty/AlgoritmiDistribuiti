@@ -1,0 +1,261 @@
+\section{Sistemi Distribuiti con Faults}
+\subsection{Faults e Failures}
+L'affidabilità totale non esiste nella realtà. Come gestiamo questa cosa?
+
+Prima di tutto, cosa può andare storto?
+\begin{itemize}
+  \item In base alla causa: fault di esecuzione su un nodo, fault di trasmissione, failure di un componente come un link o un'entità.
+  \item In base alla durata: transiente o permanente.
+  \item In base all'estensione: localizzato se solo un set (sconosciuto a priori) di componenti del sistema può essere difettoso, 
+  diffuso (tutti i nodi)
+\end{itemize}
+
+Nessun protocollo è resiliente ad un numero arbitrario di faults.
+Nota anche che alcuni fault possono essere più disastrosi di altri, ad esempio i fault non rilevabili rispetto a quelli rilevabili.
+
+Limitiamo il numero e/o il tipo di fallimenti che ammettiamo, per lavorare sotto restrizioni più comode.
+Ad esempio, in base a quanto abbiamo speso per quel componente.
+L'insieme delle ipotesi sotto le quali lavoriamo si chiama \textbf{failure model}.
+
+Component failure models:
+\begin{itemize}
+  \item \textbf{link failure}: solo i links possono fallire
+  \item \textbf{entity failure}: solo le entità possono fallire
+  \item \textbf{hybrid failure}: possono fallire entrambi
+\end{itemize}
+
+Considereremo i faults come permanenti: ``once faulty, forever faulty''.
+
+Tipi di entity failures dalla meno alla più pericolosa:
+\begin{itemize}
+  \item \textbf{crash or fail-stop}: entità che funzionavano correttamente smettono all'improvviso di funzionare
+  \item \textbf{send/receive omission}: occasionalmente l'entità perde messaggi in ingresso o messaggi pronti in uscita
+  \item \textbf{byzantine fault}: l'entità non segue il protocollo, può eseguire qualsiasi azione, anche \underline{apparentemente} ragionevole
+\end{itemize}
+
+Un fallimento bizantino è un qulsiasi fallimento che mostra sintomi diversi a diversi osservatori.
+
+Tipi di byzantine link failures:
+\begin{itemize}
+  \item \textbf{omission}: il messaggio viene inviato ma mai recapitato
+  \item \textbf{addition}: il messaggio è consegnato ad un'entità, anche se nessuno l'aveva generato
+  \item \textbf{corruption}: il messagio recapitato è diverso da quello originale
+\end{itemize}
+
+I protocolli fault tolerant (FT) dipendono anche dalla topologia del grafo su cui sono applicati.
+Problemi non triviali sono risolti con la partecipazione di tutti i nodi. Serve connettività.
+
+\defbox{ \textbf{Edge connectivity}: numero minimo di archi che, se rimossi, disconnettono il grafo }
+\defbox{ \textbf{Node connectivity}: numero minimo di nodi che, se rimossi, disconnetono il grafo }
+
+Queste due quantità stanno nella seguente relazione: node connectivity $\leq$ edge connectivity $\leq$ max degree
+
+% Eg. TODO tabella
+% network - max deg - node conn - edge conn
+% tree    - n-1 (star) - 1 - 1
+% bidirectional ring - 2 - 2 - 2
+% grafo completo - n-1 - n-1 - n-1
+
+\theobox{ Lemma: Se $k$ \textit{link} arbitrari possono fallire, è impossibile effettuare il broadcast su reti con una edge connectivity minore di $k+1$ }
+\theobox{ Lemma: Se $k$ \textit{nodi} arbitrari possono fallire, è impossibile effettuare il broadcast su reti con una node connectivity minore di $k+1$ }
+
+\subsection{Problema del p-Agreement}
+Input: ogni entità ha in input un valore $v_x$ da un set conosciuto di valori $S$.\\
+Output: almeno $p$ entità devono accordarsi sullo stesso valore $d \in S$ in un tempo finito.
+
+Operiamo in una condizione di non banalità: inizializzati tutti i nodi con lo stesso valore, devono accordarsi su tale valore.
+
+Se $p = n$, con $n$ totalità delle entità, siamo nel caso del \textbf{consenso}.
+Ovvero, tutti i nodi si sono accordati su un valore comune.
+
+Il problema del consenso si manifesta in casi reali come nei database distribuiti per decidere se una transazione è da committare o scartare,
+diagnostica per decidere se un nodo è diffettoso o funzionante, o voting.
+
+Analizziamo ora il problema del consenso nel caso di reti con \textbf{link failures} di tipo \textit{omission}.
+Vincoli di output:
+\begin{itemize}
+  \item \textbf{argreement}: tutte le entità devono accordarsi sullo stesso valore
+  \item \textbf{non banalità}: se tutte venongo inizializzate con lo stesso valore, quello è il valore su cui deve raggiungere
+  il consenso
+  \item \textbf{terminazione}: in un tempo finito
+\end{itemize}
+
+Il racconto denominato \textit{Two general's tale} spiega tale problema (consenso su reti con omission link failures) in modo intuitivo.
+
+\subsection{Two general's tale}
+Due generali dello stesso esercito si trovano in cima ad due montagne diverse e devono decidere insieme SE e IN QUALE MOMENTO attaccare, 
+per farlo devono scambiarsi dei messaggi. Non possono farlo visivamente perchè verrebbero intercettati.
+Si scambiano messaggi attraverso i messaggeri, che passano per una vallata; nella vallata ci sono però gli scout nemici, che potrebbero
+uccidere i messaggeri. Una volta inviato un messaggio deve essere restituito un ack. Il problema?\\
+Il link (la vallata) è inaffidabile, anche gli ack potrebbero non arrivare. Servirebbe l'ack dell'ack dell'ack ecc.
+
+\theobox{ Questo problema non ha soluzione, neanche in sistemi sincroni. }
+
+\theobox{ \textbf{Lemma}. In qualsiasi esecuzione di un protocollo funzionante in cui si decide di attaccare, almeno un messaggio
+deve essere consegnato. Altrimenti, sarebbe impossibile distinguere tra lo scenario in cui un generale ha deciso di non attaccare
+e lo scenario in cui ha deciso di attaccare ma il messaggio è stato perso nella vallata. }
+
+Dim per assurdo.\\
+Assumiamo che esista un protocollo che risolva il problema e che il link trasporti almeno un messaggio prima del fallimento. \\
+Prendiamo un'esecuzione $E$ non banale in cui il protocollo porta entrambi i generali ad attaccare, con il minor numero di messaggi possibile $k \geq 1$. \\
+Prendiamo una seconda esecuzione $E'$ in cui l'ultimo messaggio, da A a B, non viene consegnato. \\
+Le due istanze sono indistinguibili per A. Dall'assunzione che il protocollo sia corretto sappiamo che
+anche B deve aver attaccato (le loro mosse devono essere concordi). \\
+Conseguenza: i due generali hanno attaccato con $k-1 \geq 0$ messaggi.
+Dividiamo i due casi:
+\begin{itemize}
+ \item se $k-1 > 0$ abbiamo una contraddizione. La prima esecuione, $E$, doveva essere quella che richiedeva il minor numero di messaggi,
+ ma ne abbiamo trovata una con un numero minore (k-1), ovvero $E'$.
+ \item se $k-1 = 0$ abbiamo una contraddizione. La seconda esecuzione è andata a buon fine con zero messaggi, ma almeno uno era richiesto.
+\end{itemize}
+
+Nota che ciò che fa fallire la dimostrazione è il fatto che il link potrebbe fallire, non il fatto che fallisca o meno effettivamente.
+
+Pensa ad esempio alle spunte blu di Whatsapp in una conversazione tra due persone. Le spunte blu servono per aggirare questo problema e
+sono fonite dal server, un terzo attore della comunicazione.
+
+\subsection{Algoirtmi Precedenti con Link failures}
+\subsubsection{Consenso con link failures}
+\theobox{ Se il numero di fallimenti $F$ supera o paraeggia la edge connectivity, è impossibile raggiungere il consenso con un
+protocollo deterministico. La edge connectivity deve essere almeno $F+1$. }
+
+Assumiamo che la edge connectivity sia almeno $F+1$.
+Il broadcast continua a funzionare siccome la rete non è completamente disconnessa.
+
+Per esempio, il Flooding continua a funzionare
+\begin{itemize}
+  \item $\text{Messages}(\text{Flooding}) \leq 2m$
+  \item $\text{Time}(\text{Flooding}) \leq D(G)$, con $D(g)$ diametro del grafo con faulty links
+\end{itemize}
+
+Idea: gni entità fa broadcast del suo valore, ogni entità applica la stessa funzione sui valori ricevuti, alla fine tutte convergono allo
+stesso risultato. Il consenso è possibile.
+
+\subsubsection{Two Steps}
+Broadcast in un \underline{grafo completo} con \underline{fallimenti dei link: algoritmo \textbf{Two Steps}}.
+
+Assumiamo ci siano al massimo $F$ fallimenti $< n-1$ e $F$ sia conosciuto al nodo $x$ che inizia il broadcast.\\
+Tip. Tecnica dell'avversario. Tecnica che consiste nel ``giocare'' ad essere un avversario del protocollo, utile per analizzare il caso peggiore.
+
+Bastano due passaggi per effettuare il broadcast:
+\begin{enumerate}
+  \item $x$ manda $I$ a $F+1$ vicini. Sicuramente almeno ad un vicino arriva $I$.
+  \item ogni entità ricevente il messaggio da $x$ lo propaga a tutti i vicini, escluso $x$.
+\end{enumerate}
+
+Message Complexity: al massimo $(F+1) + (F+1) (n-2) = (F+1) (n-1) \in O(Fn)$ messaggi.\\
+La prima parte sono i messaggi mandati da x. La seconda parte sono i messaggi mandati dagli altri nodi. Ogni nodo
+del secondo step deve mandare il messaggio a $n-2$ nodi: evita se stesso e quello da cui ha ricevuto $I$
+
+\subsubsection{FT-BroadElection}
+Leader Election in Grafo Completo con Link Failures: \textbf{FT-BroadElection}.
+
+Restrizioni: start simultaneo, ID univoci, $F < n-1$ known, conoscenza della topologia (grafo completo).
+
+\textbf{FT-BroadElection}:
+\begin{enumerate}
+  \item ogni entità manda il suo ID con Two Steps
+  \item ogni entità calcola il minimo e decide se è il leader
+\end{enumerate}
+
+Costo di Two Steps ripetuto per $n$ volte: $n (F+1) (n-1) \in O(F \cdot n^2)$
+
+\subsection{Entity Faults}
+Gli stessi vincoli di prima sono richiesti: agreement per le entità non faulty, non trivialità sulle entità non faulty, terminazione
+sulle entità non faulty.
+
+Lavoriamo nel caso in cui possano avvenire sono entity faults.
+
+\theobox{ È impossibile raggiungere il consenso in reti con entità soggette a crash, anche se ne fallisce solamente una, appartenente a
+a un grafo totalmente connesso (la migliore situazione possibile), usando protocolli deterministici su sistemi asincroni. }
+
+L'idea della dimostrazione è che i tempi di attesa sulla rete sono finiti ma \textit{impredicibili}, quindi non possiamo distinguere
+se una entità è crashata o se deve ancora inviare un messaggio.
+
+Soluzione: aggiungiamo la restrizione di lavorare su \textbf{sistemi totalmente sincroni}, con entity failures di tipo \textbf{crash}.
+
+In questa condizione riusciamo a progettare algoritmi che ammettono fino a $f < n$ crash.
+
+Assunzione: i valori ammissibili su cui chierchiamo il consenso sono $v(x) \in S = \{0, 1\}$
+
+Idea: questi algoritmi lavorano in \textbf{step}. Ad ogni time step, ogni entità non faulty invia un messaggio chiamato
+\textbf{report}. Diventa quindi facile distinguere se un'entità è crashata o meno: se non invia nessun messaggio
+durante il timestep designato, significa che è avvenuto un crash. Ad ogni timestep:
+\begin{itemize}
+  \item $x$ invia un report ad ogni $y \in N(x)$
+  \item $x$ si aspetta un report da ogni $y \in N(x)$
+\end{itemize}
+
+$x$ riesce a rilevare se un suo vicino è crashato al tempo $t$ dal fatto che non riceve un messaggio entro $t+1$.
+
+Indichiamo con $r(x, t)$ il report di $x$ al tempo $t$.\\
+Il report è inizializzato a $r(x, 0) = v(x)$
+
+Cosa contiene un report?\\
+Nei casi che stiamo prendendo in analisi, solamente uno 0 o un 1.
+
+% Algoritmi di consenso randomizzato.
+
+% Oss. al round r i messaggi myvalue contengono o 0 o 1 e, al massimo un valore tra 0 e 1, può essere quello con la maggioranza assoluta
+% (almeno n/2+1).
+
+% Dato che mando un messaggio con un valore specifico, ovvero non "?", solamente se vedo la metà più uno, allora durante un round girano
+% solo proposte con lo stesso valore.
+
+% L'algoritmo garantisce non banalità. TODO
+
+% L'algoritmo garantisce agreement. TODO
+
+% L'algoritmo garantisce la terminazione in un numero di round $\in O(2^n)$.
+% Abbiamo due scenari possibili:
+%  - se un nodo x riceve la maggioranza dei valori v, propone v a tutti gli altri.
+%  - se nessuna entità vede la maggioranza allo stadio di proposal, non è detto che termini al round successivo.
+
+% Se al prox round almeno n/2+1 nodi generano lo stesso valore, viene generata una maggioranza.
+% La probabilità che quel numero di nodi si accordi sullo stessso valore, è sicuramente maggiore della probabilità che TUTTE le entità
+% scelgano lo stesso valore: P_{majority same value} >= P_{all same value} = 1/2^n
+
+% Quindi... se sono termino al round r vuol dire che ho fallito nei r-1 round precedenti e ho avuto successo in quello attuale: p (1-p)^{r-1}.
+
+% Fault Bizantini.
+% I fault bizantini sono più difficili da affrontare perchè le enità si comportano in modo diverso nel tempo: possono seguire il protocollo per un pò,
+% poi simulare un crash, poi riprendere, ecc.
+
+% Anche gli attacchi informatici in cui l'attaccante prende il controllo di un nodo sono un esempio di comportamenti bizantini.
+% Anche la collaborazione tra nodi bizantini è possibile e potrebbe fuorviare il protocollo.
+
+% Teorema. Esiste un risultato secondo il quale è possibile progettare un protocollo deterministico che raggiunga il consenso tollerando
+% al più f < n/3 fault bizantini.
+
+% Consenso su sistema sincrono con failure bizantini.
+% Restrizioni: sincronicità, grafo completo, connettività completa, failure bizantina, inizio sync, ID univoci, ogni nodo conosce gli IDs
+% dei suoi vicini (restrizione aggiuntiva per fare fronte all'impredicibilità dei fault bizantini).
+
+% Mandiamo solo gli zero, gli 1 sono dedotti dalla mancata comunicazione, possibile siccome il protocollo è sincrono.
+
+% Aggiungiamo ai messaggi l'ID del proposer e il timestamp di invio del messaggio: (0, ID(x), t).
+% In questo modo possiamo rilevare un forge (riceviamo msg da ID doppi o da nodi che non sono nostri vicini), e un tempo fittizio (sistema sincrono).
+
+% Oss. L'importante è che anche i nodi bizantini si comportino in modi coerente, rispettando il protocollo. Rileviamo solo comportamenti
+% "bizzarri"; e.g. far accettare ad alcuni lo zero, ad altri un uno. Non possiamo impedire che il bizantino proponga un valore iniziale
+% a suo piacere.
+
+% Vediamo il meccanismo RegisteredMail per comunicare lo zero. Assomiglia al broadcast con faulty link.
+% RegisteredMail per nodo non faulty x:
+% Posso effettuare un wakeup mandando (init, 0, ID(x), t). \\
+% Ricevuto un messaggio (init, 0, ID(y), t) da un nodo y facciamo:
+%  - broadcast di (echo, 0, ID(y), t) se il messaggio proviene dal canale su cui è registrato y, al tempo t+1, ed è il primo init ricevuto da quell'ID.
+%  - ignoriamo il messaggio in tutti gli altri casi. 3 scenari: tempo falso, ID falso wrt link registrato, init doppio
+
+% Dal teorema, almeno f+1 non faulty echos arrivano. TODO: completa ragionamento.
+
+% Se un bizantino forgia un messaggio, potrebbe accordarsi con gli altri bizantini per propagare questo messaggio senza rispettare il protocollo.
+% I nodi non faulty vengono ingannati? No, non dovrebbero. Anche assumendo che tutti i bizantini facciano eco del messaggio,
+% i bizantini sono uno in meno rispetto ai non faulty: f < f+1.
+
+% TODO: 1a ora lezione 20 novembre
+% Prima cosa spiegata: TellZero_byzantine
+
+% Message Complexity of TellZero_Byz.
+% n-1. Un messaggio a tutti
+% Extra per esame: consenso randomizzato con fault bizantini, su sistemi asincroni.
