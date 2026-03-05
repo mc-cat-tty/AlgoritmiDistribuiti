@@ -80,7 +80,7 @@ Vincoli di output:
   \item \textbf{terminazione}: in un tempo finito
 \end{itemize}
 
-Il racconto denominato \textit{Two general's tale} spiega tale problema (consenso su reti con omission link failures) in modo intuitivo.
+Il racconto denominato \textit{Two general's tale} spiega il problema (consenso su reti con omission link failures) in modo intuitivo.
 
 \subsection{Two general's tale}
 Due generali dello stesso esercito si trovano in cima ad due montagne diverse e devono decidere insieme SE e IN QUALE MOMENTO attaccare, 
@@ -95,7 +95,7 @@ Il link (la vallata) è inaffidabile, anche gli ack potrebbero non arrivare. Ser
 deve essere consegnato. Altrimenti, sarebbe impossibile distinguere tra lo scenario in cui un generale ha deciso di non attaccare
 e lo scenario in cui ha deciso di attaccare ma il messaggio è stato perso nella vallata. }
 
-Dim per assurdo.\\
+\textbf{Dim per assurdo.}\\
 Assumiamo che esista un protocollo che risolva il problema e che il link trasporti almeno un messaggio prima del fallimento. \\
 Prendiamo un'esecuzione $E$ non banale in cui il protocollo porta entrambi i generali ad attaccare, con il minor numero di messaggi possibile $k \geq 1$. \\
 Prendiamo una seconda esecuzione $E'$ in cui l'ultimo messaggio, da A a B, non viene consegnato. \\
@@ -104,8 +104,8 @@ anche B deve aver attaccato (le loro mosse devono essere concordi). \\
 Conseguenza: i due generali hanno attaccato con $k-1 \geq 0$ messaggi.
 Dividiamo i due casi:
 \begin{itemize}
- \item se $k-1 > 0$ abbiamo una contraddizione. La prima esecuione, $E$, doveva essere quella che richiedeva il minor numero di messaggi,
- ma ne abbiamo trovata una con un numero minore (k-1), ovvero $E'$.
+ \item se $k-1 > 0$ abbiamo una contraddizione. La prima esecuzione, $E$, doveva essere quella che richiedeva il minor numero di messaggi,
+ ma ne abbiamo trovata una con un numero minore ($k-1$), ovvero $E'$.
  \item se $k-1 = 0$ abbiamo una contraddizione. La seconda esecuzione è andata a buon fine con zero messaggi, ma almeno uno era richiesto.
 \end{itemize}
 
@@ -125,16 +125,16 @@ Il broadcast continua a funzionare siccome la rete non è completamente disconne
 Per esempio, il Flooding continua a funzionare
 \begin{itemize}
   \item $\text{Messages}(\text{Flooding}) \leq 2m$
-  \item $\text{Time}(\text{Flooding}) \leq D(G)$, con $D(g)$ diametro del grafo con faulty links
+  \item $\text{Time}(\text{Flooding}) \leq D(G)$, con $D(G)$ diametro del grafo con faulty links
 \end{itemize}
 
-Idea: gni entità fa broadcast del suo valore, ogni entità applica la stessa funzione sui valori ricevuti, alla fine tutte convergono allo
+Idea: ogni entità fa broadcast del suo valore, ogni entità applica la stessa funzione sui valori ricevuti, alla fine tutte convergono allo
 stesso risultato. Il consenso è possibile.
 
 \subsubsection{Two Steps}
 Broadcast in un \underline{grafo completo} con \underline{fallimenti dei link: algoritmo \textbf{Two Steps}}.
 
-Assumiamo ci siano al massimo $F$ fallimenti $< n-1$ e $F$ sia conosciuto al nodo $x$ che inizia il broadcast.\\
+Dato $n$ numero di nodi, assumiamo ci siano al massimo $F$ fallimenti $< n-1$ e $F$ sia conosciuto al nodo $x$ che inizia il broadcast.\\
 Tip. Tecnica dell'avversario. Tecnica che consiste nel ``giocare'' ad essere un avversario del protocollo, utile per analizzare il caso peggiore.
 
 Bastano due passaggi per effettuare il broadcast:
@@ -154,31 +154,32 @@ Restrizioni: start simultaneo, ID univoci, $F < n-1$ known, conoscenza della top
 
 \textbf{FT-BroadElection}:
 \begin{enumerate}
-  \item ogni entità manda il suo ID con Two Steps
-  \item ogni entità calcola il minimo e decide se è il leader
+  \item \underline{ogni entità} manda il suo ID con Two Steps
+  \item \underline{ogni entità} calcola il minimo e decide se è il leader
 \end{enumerate}
 
 Costo di Two Steps ripetuto per $n$ volte: $n (F+1) (n-1) \in O(F \cdot n^2)$
 
 \subsection{Entity Faults}
-Gli stessi vincoli di prima sono richiesti: agreement per le entità non faulty, non trivialità sulle entità non faulty, terminazione
-sulle entità non faulty.
+Gli stessi vincoli di prima sono richiesti: agreement per le entità NF, non trivialità sulle entità NF, terminazione
+sulle entità NF.
 
 Lavoriamo nel caso in cui possano avvenire sono entity faults.
 
 \theobox{ È impossibile raggiungere il consenso in reti con entità soggette a crash, anche se ne fallisce solamente una, appartenente a
-a un grafo totalmente connesso (la migliore situazione possibile), usando protocolli deterministici su sistemi asincroni. }
+un grafo totalmente connesso (la migliore situazione possibile), usando protocolli deterministici su sistemi asincroni. }
 
 L'idea della dimostrazione è che i tempi di attesa sulla rete sono finiti ma \textit{impredicibili}, quindi non possiamo distinguere
 se una entità è crashata o se deve ancora inviare un messaggio.
 
 Soluzione: aggiungiamo la restrizione di lavorare su \textbf{sistemi totalmente sincroni}, con entity failures di tipo \textbf{crash}.
 
+\subsubsection{TellAllCrash}
 In questa condizione riusciamo a progettare algoritmi che ammettono fino a $f < n$ crash.
 
 Assunzione: i valori ammissibili su cui chierchiamo il consenso sono $v(x) \in S = \{0, 1\}$
 
-Idea: questi algoritmi lavorano in \textbf{step}. Ad ogni time step, ogni entità non faulty invia un messaggio chiamato
+Idea: questi algoritmi lavorano in \textbf{step}. Ad ogni timestep, ogni entità non faulty (NF) invia un messaggio chiamato
 \textbf{report}. Diventa quindi facile distinguere se un'entità è crashata o meno: se non invia nessun messaggio
 durante il timestep designato, significa che è avvenuto un crash. Ad ogni timestep:
 \begin{itemize}
@@ -194,68 +195,290 @@ Il report è inizializzato a $r(x, 0) = v(x)$
 Cosa contiene un report?\\
 Nei casi che stiamo prendendo in analisi, solamente uno 0 o un 1.
 
-% Algoritmi di consenso randomizzato.
+Dati i vicini: $N(x) = \{ y_1, \dots, y_{|N(x)|} \}$\\
+Aggiornamento del report: datenotati con $m$ i messaggi degli altri nodi e con $r$ un report, abbiamo che
+$r(x, t) = r(x, t-1) \text{ AND } m(y_1, t) \text{ AND } \dots \text{ AND } m(y_{|N(x)|}, t)$.
+Nel caso di mancata ricezione di un messaggio $m$ si sostituisce il suo valore con 1 (elemento neutro AND).
 
-% Oss. al round r i messaggi myvalue contengono o 0 o 1 e, al massimo un valore tra 0 e 1, può essere quello con la maggioranza assoluta
-% (almeno n/2+1).
+Terminazione: ogni entità NF termina il protocollo dopo f+1 unità di tempo con una decisione.\\
+Message complexity: il caso peggiore si verifica quando non avvengono crash
+$$
+\text{Messages}(\text{TellAllCrash}) = \underbrace{(n-1)}_\text{Max neighbors} \cdot \underbrace{n}_\text{Nodes} \cdot \underbrace{(f+1)}_\text{Rounds}
+$$
+Time Complexity:
+$$
+\text{Time}(\text{TellAllCrash}) = f+1 \in O(f)
+$$
 
-% Dato che mando un messaggio con un valore specifico, ovvero non "?", solamente se vedo la metà più uno, allora durante un round girano
-% solo proposte con lo stesso valore.
+Proprietà:
+\begin{enumerate}
+ \item se un'entità NF riceve uno 0 al tempo $t$, tutte le altre entità NF riceveranno 0
+  al tempo $t+1$
+  \item se un'entità riceve 0 durante l'esecuzione acconsentirà a 0
+  \item se tutte le entità iniziano con 1, tutte le entità NF acconsentirannno a 1
+\end{enumerate}
 
-% L'algoritmo garantisce non banalità. TODO
+Combinando queste proprietà si dimostra la non-trivialità: tutte le entità NF decidono 0 se tutte partono con 0
+(infatti, dal punto 2 ne basterebbe solo una a 0), stessa cosa per l'1.
 
-% L'algoritmo garantisce agreement. TODO
+Cosa succede invece se tutte le non-faulty partono con 1 e almeno una faulty con 0? se una delle faulty
+riesce a ad inviare almeno uno zero, tutta la rete convergerà a 0. Nota che un'entità potrebbe crashare durante
+l'invio dei messaggi, inviando il messaggio solo a parte dei suoi vicini; nel caso estremo ad uno solo.
 
-% L'algoritmo garantisce la terminazione in un numero di round $\in O(2^n)$.
-% Abbiamo due scenari possibili:
-%  - se un nodo x riceve la maggioranza dei valori v, propone v a tutti gli altri.
-%  - se nessuna entità vede la maggioranza allo stadio di proposal, non è detto che termini al round successivo.
+Può succedere che non venga raggiunto il consenso? Ad esempio, nel caso in cui fino al tempo $f$ tutte le entità NF hanno
+ricevuto solo 1 e al tempo $f+1$ solo una parte di esse riceve 0, cosa succede?\\
+Questo non può accadere:
+\begin{itemize}
+  \item se ci troviamo nella situazione sopra, significa che un'entità faulty è crashata tra $f$ e $f+1$, mentre inviava degli zeri.
+  \item se inviava degli zeri al tempo $f$, significa che al tempo $f-1$ ha ricevuto uno zero.
+  \item vale lo stesso per l'entità che ha inviato almeno uno zero al tempo $f-2$ e via così per tutte le altre entità.
+  \item estendendo il ragionamento a tutte le entità si arriva a coinvolgere tutte ed $f$ le entità faulty.
+  Considerando un crash per ogni timestep avremmo che anche il timestep $t=0$ è stato soggetto ad un crash, ma ciò è impossibile, perchè
+  le $f$ entità faulty sono state esaurite dal timestep $1$ al timestep $f+1$. Quindi al timestep $t=0$ non può essere crashata nessuna entità.
+  \item abbiamo raggiunto un assurdo: al tempo $t=0$ non sono crashate entità, quindi non erano presenti entità con valore 0, perciò
+  è impossibile che sia stato visto anche solo uno zero nei timestep successivi.
+\end{itemize}
 
-% Se al prox round almeno n/2+1 nodi generano lo stesso valore, viene generata una maggioranza.
-% La probabilità che quel numero di nodi si accordi sullo stessso valore, è sicuramente maggiore della probabilità che TUTTE le entità
-% scelgano lo stesso valore: P_{majority same value} >= P_{all same value} = 1/2^n
+Completiamo quindi la definizione di \textit{agreement per sistemi sincroni con entity faults di tipo crash}:
+\defbox{
+  \begin{itemize}
+    \item se almeno una entità NF inizia con 0, tutte le NF decidono 0
+    \item se tutte le entità iniziano con 1, tutte le NF decidono 1
+    \item se tutte le NF iniziano con 1 e almeno una faulty inizia con 0, tutte le NF si accorderanno su 0,
+    tranne nel caso in cui tutte le entità faulty crashino prima di aver inviato un messaggio
+  \end{itemize}
+}
 
-% Quindi... se sono termino al round r vuol dire che ho fallito nei r-1 round precedenti e ho avuto successo in quello attuale: p (1-p)^{r-1}.
+Possiamo ridurre il numero di messaggi? due considerazioni: inviare 1 è inutile (equivalente a rimanere ``in silenzio'') e
+inviare 0 ai vicini è utile solo la prima volta. Nel caso peggiore tutti i nodi (nessun nodo faulty) riceveranno uno 0 e dovranno
+propagarlo ai loro vicini:
+$$
+\text{Messages}(\text{TellAllCrash}) \leq n(n-1) \quad \quad \text{Time}(\text{TellAllCrash}) = f+1
+$$
 
-% Fault Bizantini.
-% I fault bizantini sono più difficili da affrontare perchè le enità si comportano in modo diverso nel tempo: possono seguire il protocollo per un pò,
-% poi simulare un crash, poi riprendere, ecc.
+Questo algoritmo può essere generalizzato a valori diversi da 0/1, a start non simultaneo e a grafi con topologia arbitraria
+tale per cui la connettività dei nodi sia superiore a $f$.
 
-% Anche gli attacchi informatici in cui l'attaccante prende il controllo di un nodo sono un esempio di comportamenti bizantini.
-% Anche la collaborazione tra nodi bizantini è possibile e potrebbe fuorviare il protocollo.
+\subsection{Algoritmi di Consenso Randomizzato su Sistemi Asincrone}
 
-% Teorema. Esiste un risultato secondo il quale è possibile progettare un protocollo deterministico che raggiunga il consenso tollerando
-% al più f < n/3 fault bizantini.
+Restrizioni: grafo completo, sistema \underline{asincrono}, entitiy failures di tipo crash, conoscenza del numero di nodi $n$ e numero di failures $f$.
 
-% Consenso su sistema sincrono con failure bizantini.
-% Restrizioni: sincronicità, grafo completo, connettività completa, failure bizantina, inizio sync, ID univoci, ogni nodo conosce gli IDs
-% dei suoi vicini (restrizione aggiuntiva per fare fronte all'impredicibilità dei fault bizantini).
+\theobox{È possibile progettare algoritmi di consenso randomizzato che tollerino $f \leq \frac{n}{2}$ crashes}
 
-% Mandiamo solo gli zero, gli 1 sono dedotti dalla mancata comunicazione, possibile siccome il protocollo è sincrono.
+Assumiamo che $v(x) = \{0, 1\} \ \forall x \in G$.
 
-% Aggiungiamo ai messaggi l'ID del proposer e il timestamp di invio del messaggio: (0, ID(x), t).
-% In questo modo possiamo rilevare un forge (riceviamo msg da ID doppi o da nodi che non sono nostri vicini), e un tempo fittizio (sistema sincrono).
+\subsubsection{Ben-Or's Protocol}
+Idea: il protocollo funziona in round, locali per ogni entità. Ogni entità tiene conto del suo round corrente e marca i messaggi che invia con esso.
 
-% Oss. L'importante è che anche i nodi bizantini si comportino in modi coerente, rispettando il protocollo. Rileviamo solo comportamenti
-% "bizzarri"; e.g. far accettare ad alcuni lo zero, ad altri un uno. Non possiamo impedire che il bizantino proponga un valore iniziale
-% a suo piacere.
+Come gestire round ``desincronizzati''? Dato $r$ round corrente:\\
+\begin{itemize}
+  \item I messaggi dal round \textit{corrente} $r$ vengono usati
+  \item I messaggi da round \textit{passati} $r' < r$ vengono scartati
+  \item I messaggi da round \textit{futuri} $r' > r$ vengono accodati per essere utilizzati in futuro
+\end{itemize}
 
-% Vediamo il meccanismo RegisteredMail per comunicare lo zero. Assomiglia al broadcast con faulty link.
-% RegisteredMail per nodo non faulty x:
-% Posso effettuare un wakeup mandando (init, 0, ID(x), t). \\
-% Ricevuto un messaggio (init, 0, ID(y), t) da un nodo y facciamo:
-%  - broadcast di (echo, 0, ID(y), t) se il messaggio proviene dal canale su cui è registrato y, al tempo t+1, ed è il primo init ricevuto da quell'ID.
-%  - ignoriamo il messaggio in tutti gli altri casi. 3 scenari: tempo falso, ID falso wrt link registrato, init doppio
+Idea: ogni entità propone il suo valore, se le altre entità non la seguono, verrà selezionato un valore a caso tra quelli proposti.
 
-% Dal teorema, almeno f+1 non faulty echos arrivano. TODO: completa ragionamento.
+Ogni round $r$ è ulteriormente scomposto in \textbf{stadi}:
+\begin{itemize}
+  \item \textbf{Propose}: viene proposto un valore
+  \item \textbf{Adapt}: viene scelto un valore tra quelli proposti dagli altri nodi oppure viene scelto un nuovo valore
+\end{itemize}
+ 
+Escludendo la logica di scarto e accodamento dei messaggi in base al round ed escludendo la condizione di terminazione del ciclo \texttt{while},
+lo pseudocodice per l'entità \texttt{i} con valore iniziale \texttt{x} è il seguente:
+\begin{verbatim}
+    r = 1
+    x_i = initial_value
 
-% Se un bizantino forgia un messaggio, potrebbe accordarsi con gli altri bizantini per propagare questo messaggio senza rispettare il protocollo.
-% I nodi non faulty vengono ingannati? No, non dovrebbero. Anche assumendo che tutti i bizantini facciano eco del messaggio,
-% i bizantini sono uno in meno rispetto ai non faulty: f < f+1.
+    while True:
+      // Propose
+      broadcast MyValue(r, x_i)
+      wait for n-f messages MyValue(r, ...)  // MyValue messages belonging to round r
+      // Dato f < n/2, abbiamo che n-f > n/2
+      if count(msgs containing same value x) >= n/2 + 1:
+        broadcast Propose(r, x)
+      else:
+        broadcast Propose(r, ?)
+      
+      // Adapt
+      wait for n-f messages Propose(r, ...)
+      if at least one proposal arrives (y != ?):
+        x_i = y
+        if count(msgs proposing same value y) >= f+1:
+          decision = y  // Decide
+        else:
+          x_i = random_uniform_choice([0, 1])  // Make new choice
+      
+      r++
+\end{verbatim}
 
-% TODO: 1a ora lezione 20 novembre
-% Prima cosa spiegata: TellZero_byzantine
+\theobox{\textbf{Lemma.} L'algoritmo garantisce non bainalità. Se tutte le entità vengono inizializzate con lo stesso valore $v$,
+il majority voting della fase di Propose passa con tale valore e nella fase di Adapt tutte le entità decidono per $v$.}
 
-% Message Complexity of TellZero_Byz.
-% n-1. Un messaggio a tutti
-% Extra per esame: consenso randomizzato con fault bizantini, su sistemi asincroni.
+\obsbox{ Al round $r$ i messaggi \texttt{MyValue} contengono o 0 o 1 e, al massimo un valore tra 0 e 1, può essere quello con la maggioranza assoluta
+(almeno n/2+1 propose) }
+
+\theobox{
+  \textbf{Lemma.} L'algoritmo garantisce agreement: se una entità non faulty (NF) decide $v$, tutte le altre entità NF decideranno $v$.
+  \proofbox{
+    Se una entità ha deciso per $v$ deve aver visto un numero di \texttt{Propose(r, v)} $\geq f+1$,
+    quindi significa che almeno una proposta è arrivata da un'entità NF.
+    Dato che il grafo è completamente connesso, anche tutte le altre entità NF avranno visto almeno una proposta di $v$, impostando
+    \texttt{x\_i = v}.
+
+    Al round successivo, ogni entità NF proporrà $v$; le entità NF $n-f$ sono almeno $n-f \geq \frac{n}{2} + 1$ (dall'assuzione
+    che le entità faulty non superino la metà).
+
+    Durante la fase di adapt ogni entità vedrà la proposta di (almeno) ogni entità NF e deciderà per $v$:
+    $$
+    f < \frac{n}{2} \Rightarrow 2f < n \Rightarrow 2f+1 \leq n \Rightarrow 2f+1-f \leq n-f \Rightarrow f+1 \leq n-f
+    $$
+    }
+}
+
+L'algoritmo termina in un numero di round \underline{attesi} $\in O(2^n)$.
+Abbiamo due scenari possibili:
+\begin{itemize}
+ \item se un nodo $x$ riceve la maggioranza dei valori $v$ al round $r$, tutti i NF decidono $v$ al round $r+1$ (come appena dimostrato).
+ \item se nessuna entità vede la maggioranza allo stadio di proposal, non è detto che termini al round successivo. Verrà inviata una proposta con ?.
+ Durante lo stadio di adapt ogni entità sceglierà casualmente il proprio valore per il prossimo round.
+\end{itemize}
+
+Se al prossimo round almeno n/2+1 nodi generano lo stesso valore, viene generata una maggioranza.
+La probabilità che quel numero di nodi si accordi sullo stessso valore, è sicuramente maggiore della probabilità che TUTTE le entità
+scelgano lo stesso valore: $p = P_\text{majority same value} >= P_\text{all same value} = 1/2^n$, dalla proprabilità di $n$ estrazioni binarie disgiunte.
+
+Quindi\dots se sono termino al round $r$ vuol dire che ho fallito nei $r-1$ round precedenti e ho avuto successo in quello attuale:
+$P_\text{success at r} = p \cdot (1-p)^{r-1}$. Questa è la distribuzione geometrica.
+
+Il numero di round attesi prima di avere successo è: $\frac{1}{p} \leq 2^{n-1}$
+
+\subsection{Fault Bizantini}
+I fault bizantini sono più difficili da affrontare perchè le enità si comportano in modo diverso nel tempo: possono seguire il protocollo per un pò,
+poi simulare un crash, poi riprendere, ecc.
+
+Anche gli attacchi informatici in cui l'attaccante prende il controllo di un nodo sono un esempio di comportamenti bizantini.
+La collaborazione tra nodi bizantini è possibile e potrebbe fuorviare il protocollo.
+
+Il risultato secondo il quale non esistono protocolli deterministici per il consenso su reti asincrone con fault sulle entità, vale
+anche per fault bizantini.
+
+\theobox{È impossibile progettare un protocollo deterministico che raggiunga il consenso tollerando
+più di $f \geq \frac{n}{3}$ fault bizantini, anche su sistemi sincroni e reti a grafo completo.}
+
+\subsubsection{TellZero Byzantine}
+A.k.a Consenso su Sistemi Sincroni con Fault Bizantini.
+
+Restrizioni: sincronicità, grafo completo, connettività completa, failure bizantini, inizio simultaneo, ID univoci, ogni nodo conosce gli IDs
+dei suoi vicini (restrizione aggiuntiva per fare fronte all'impredicibilità dei fault bizantini).
+
+Questo protocollo tollererà al massimo $\frac{n}{3}$ fault bizantini.
+
+Mandiamo solo gli zero, gli 1 sono dedotti dalla mancata comunicazione, possibile siccome il protocollo è sincrono.
+
+Idea: adattare il protocollo \textit{TellAllCrash} (consenso su reti sincrone con entity faults) per il caso dei fault bizantini.
+
+Aggiungiamo ai messaggi l'ID del proposer e il timestamp di invio del messaggio: \textbf{m = (value, ID(x), t)}.
+In questo modo possiamo rilevare un forge (ricezione di msg da ID doppi o da nodi che non sono nostri vicini) e un tempo fittizio (sistema sincrono).
+
+\obsbox{
+L'importante è che anche tutti i nodi si accordino sullo stesso valore, indipententemente da chi l'ha proposto.
+Non possiamo impedire che un bizantino proponga un valore iniziale. }
+
+Vediamo il meccanismo \textbf{RegisteredMail} per comunicare lo zero. Assomiglia al broadcast con faulty link e serve ad accettare un messaggio
+solo se proviene da una entità non faulty (NF), o se proviene da un'entità faulty ma è stato ricevuto da tutti i NF.
+
+RegisteredMail per nodo NF x:\\
+\begin{enumerate}
+  \item Effettuo un wakeup mandando (init, 0, ID(x), t). \\
+  \item Ricevuto un messaggio (init, 0, ID(y), t) da un nodo y al tempo $t'$:
+  \begin{enumerate}
+    \item facciamo broadcast di (echo, 0, ID(y), t) al tempo $t+1$, se il messaggio proviene dal canale su cui è registrato y, se $t' == t+1$, ed è il primo init ricevuto da quell'ID.
+    \item ignoriamo il messaggio in tutti gli altri casi. 3 scenari: tempo falso, ID falso rispetto al link registrato, init doppio
+    \item se riceviamo (echo, 0, ID(y), t) al tempo $t' \geq t+2$ da almeno $f+1$ diversi nodi, almeno uno deve provenire da un nodo non bizantino.
+    Facciamo broadcast del messaggio se non già fatto prima.
+    \item se riceviamo (echo, 0, ID(y), t) al tempo $t' \geq t+2$ da almeno $n-f$ entità (quelle NF), accettiamo il wakup da y al tempo t,
+    se non già accettato.
+  \end{enumerate}
+\end{enumerate}
+
+Proprietà:
+\begin{itemize}
+  \item il wakeup di una entità NF è accettato dalle altre NF entro 2 timestep: uno per il wakeup delle n-f NF, poi
+  la loro propagazione, infine l'accettazione di tutte le entità.
+  \item se il wakeup viene acettato da un'entità NF $y$, entro 1 timestep verrà accettato da tutte le altre entità NF: infatti,
+  se $y$ lo ha accettato significa che il timestep precedente gli erano arrivati almeno n-f echo, di cui $n-f-f = n-2f \geq f+1$
+  (da $n > 3f \Rightarrow n \geq 3f + 1 \Rightarrow n-2f \geq f+1$) echo da entità NF. Le $n-f$ entità NF hanno inviato il messaggio
+  anche alle altre entità, che avranno visto almeno $f+1$ messaggi, svegliandosi. Al timestep successivo ognuna invierà l'echo, e tutte le non
+  faulty accetteranno il wakeup (vedono $n-f$ echo totali).
+  \item se il wakeup è inviato da un bizantino, non viene accettato da entità NF. Anche se tutti si coalizzassero, non supererebbero la soglia di $f+1$
+  dei punti (c) e (d).
+\end{itemize}
+
+Se un bizantino forgia un messaggio, potrebbe accordarsi con gli altri bizantini per propagare questo messaggio senza rispettare il protocollo.
+I nodi NF vengono ingannati? No, non dovrebbero. Anche assumendo che tutti i bizantini facciano echo del messaggio,
+i bizantini sono uno in meno rispetto alla soglia richiesta per accettare il wakeup: $f < f+1$.
+
+Il protocollo \textit{TellByZero-Byzantine} fa uso del \textit{RegisteredMail} per accettare i messaggi di wakeup.
+
+\textit{TellByZero-Byzantine} lavora per stadi, da 0 a f+2. Ogni stadio dura due timestep. Assumiamo che l'invio di un messaggio a tutti comprenda
+l'invio al mittente stesso.
+
+TellZero-Byzantine:
+\begin{itemize}
+  \item $t=0$: ogni NF con $v=0$ invia (0, id(x), 0) con RegisteredMail
+  \item $t = 2i$ con $1 \leq i \leq f+1$ (prima time unit dello stadio $i$): per ogni entità x, se x ha accettato il wakeup da più di $f+i-1$ ID diversi e
+  non ha ancora inviato un wakeup, invia (0, id(x), 2i) con RegisteredMail
+  \item $t = 2(f+2)$ (prima time unit dell'ultimo stadio): ogni entità NF decide 0 se e solo se ha accettato almeno $2f+1$ wakeup distinti;
+  in caso contrario decide 1.
+\end{itemize}
+
+\theobox{\textbf{Lemma.} TellZero-Byzantine termina.
+  \proofbox{Per costruzione termina dopo 2(f+2) timestep}
+}
+
+\theobox{\textbf{Lemma.} TellZero-Byzantine è non banale.
+  \proofbox{
+    Se tutte le entità iniziano con 0, sono incluse le entità NF. Al tempo 0 tutte inviano wakeup con RegisteredMail.
+
+    Tutte le entità NF accettano il wakeup dal punto (a) di RegisteredMail.
+
+    I wakeup sono almeno $n-f \geq 2f+1$ (da $n > 3f \Rightarrow n \geq 3f + 1 \Rightarrow n-2f \geq f+1$).
+
+    Al tempo $t=2$ ($i=1$) i wakeup superano la soglia di $f+i-1 = f \geq 2f+1$ e tutte le entità NF decidono 0.
+  }
+
+  \proofbox{
+    Se tutte le entità iniziano con 1, sono incluse le entità NF. Al tempo 0 nessuna invia il wakeup con RegisteredMail.
+
+    In ogni istante da $t \geq 2$ ($i \geq 1$) in poi, nessuna entità NF avvierà un wakeup; infatti il wakeup viene avviato solo se
+    sono stati accettati più di $f+i+1 > f$ wakeup. Non accadrà mai, dato che al massimo $f$ entità simuleranno un wakeup.
+
+    Tutte le entità NF decidono 1.
+  }
+}
+
+\theobox{\textbf{Lemma.} TellZero-Byzantine grantisce il consenso: se una entità NF decide 0, allora tutte le altre NF decidono 0 (ciò implica
+  che, se nessuna NF sceglie 0, si concorderà su 1).
+  \proofbox{
+    Skip.
+  }
+}
+
+Complessità?
+$$
+\text{Messages}(\text{TellZero Byzantine}) =
+ \underbrace{(n-f) [
+  \overbrace{(n-1)}^\text{Init} + \overbrace{n (n-1)}^\text{Echos}]}_\text{Non faulty nodes} +
+ \underbrace{f [\overbrace{2 (f+2)}^\text{Timesteps} \overbrace{(n-1)}^\text{Neighbors in complete G}] + f \overbrace{[n (n-1)]}^\text{Echos} }_\text{Faulty nodes}
+ \in O(n^3)
+$$
+
+$2(f+2)(n-1)$ modella un bizantino che invia messaggi a tutti i vicini ad ogni timestep.
+$[n (n-1)]$ modella gli echo generati da un nodo bizantino; per ogni nodo, un solo init verrà accettato.
+
+TellZero-Byzantine può essere esteso al caso di arbitrari valori iniziali; abbassando la il numero di nodi bizantini accettati,
+l'algoritmo si può estendere a grafi più generici.
+
+Extra per esame: consenso randomizzato con fault bizantini, su sistemi asincroni.
