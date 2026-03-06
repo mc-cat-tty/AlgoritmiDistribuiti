@@ -1,0 +1,259 @@
+\section{Routing}
+Problema: Il nodo x vuole comunicare un'informazione con l'entità y. Come fa x a raggiungere y?\\
+Broadcast routing: x manda in broadcast l'informazione a tutta la rete. Soluzione più semplice, funziona sempre, ma alto numero di
+messaggi e problema di confidenzialità.\\
+\textbf{Routing}: processo che consiste nel determinare un percorso tra sorgente x e destinazione y.\\
+\textbf{Router}: nodo dedicato a determinare quale percorso deve seguire un messaggio per raggiungere la destinazione.
+
+Ogni entità ha un \textbf{identificativo univoco} (global names).
+Ogni link ha un'orientamento locale. Dei costi possono essere associati ai link.
+Ogni entità ha una routing function $f()$. Per ogni destinazione $y$, $f(y)$ è il link sul quale il messaggio deve essere mandato per raggiungere $y$.
+
+La decisione di routing è pressa sulla base di un'informazione presente nel messaggio (\textbf{indirizzo del destinatario}) e un'informazione locale (\textbf{routing table}).
+
+Stiamo attenti a: routing memory, ovvero i bits necessari per memorizzare la tabella, e routing time, ovvero il tempo necessario per trovare il next hop.
+
+Esempio: tabella con ogni riga contenente il nodo dst, il next hop ed, eventualmente il costo.
+% TODO immagine.
+
+Costo Temporale: $O(n \log n)$ con binary search siccome è ordinata.\\
+Costo Spaziale: $O(n \log \text{max}_\text{id})$; n righe, ognuna con ID del next hop.
+
+I cammini minimi rispettano il \textbf{principio di subottimalità}. Per questo possiamo ricordarci solo il next hop nella tabella di routing.
+
+Soluzione semplice. Se ogni nodo conoscesse a priori tutto il grafo, potrebbe costruirsi l'albero dei cammini minimi a partire da quello e ricavare i next hop.
+
+\subsection{Gossip}
+Idea: ogni nodo deve arrivare ad avere una vista completa del grafo. \\
+Esecuzione: ogni nodo comunica a tutti gli altri quali sono i suoi vicini e quanto costano gli archi verso di loro.
+Broadcast tutti a tutti:
+\begin{itemize}
+  \item contruiamo uno spanning tree qualunque per limitare il numero dei messaggi. $O(2m)$ con SHOUT+.
+  \item ogni entità riceve le informazioni dal suo vicino. Ogni coppia di nodi si scambia info, quindi $O(2m)$.
+  \item ogni entità propaga l'info sullo ST. Ogni entità $x$ sui suoi vicini nel grafo ($N(x)$) a tutti i suoi vicini in ST: $\sum_x (n-1) \text{deg}(x) = (n-1) \sum_x \text{deg}(x) = (n-1) (2m)$
+  \item ogni entità calcola localmente lo stortest path. Questa operazione non richiede messaggi.
+\end{itemize}
+
+Dai costi sopra, il totale è $\text{Messages}(\text{Gossip}(G)) = O(mn)$.
+
+Problema: non è detto che tutte le entità abbiano spazio sufficiente per memorizzare l'intero grafo\dots cerchiamo una soluzione più efficiente.
+
+\subsection{Bellman Ford Distribuito}
+Idea: ogni entità conosce i suoi vicini e iterativamente aggiorna il suo \textbf{distance vector} man mano che i vicini gli propagano informazioni
+su nodi sempre più lontani.
+
+Ogni riga della tabella di routing può contenere il next hop con un costo associato (in un dato momento prima della convergenza,
+potenzialmente subottimale), oppure un unknown next hop con un costo infinito, perchè irraggiungibile.
+
+Questo protocollo è una implementazione distribuita di $Bellman-Ford$. Richiede al massimo $n-1$ iterazioni (lunghezza massima di un cammino
+minimo su grafo) prima di arrivare a convergenza. È usato in protocolli di routing come RIP. Durante le iterazioni, ogni entry della routing
+table viene sostituita se, alla luce del distance vector ricevuto, è possibile abbassare il costo per raggiungere uno dei nodi della tabella.
+
+Message Complexity. Ad ogni iterazione ogni entità manda il proprio distance vector ai propri vicini.
+Ogni messaggio contiene $n$ righe con 2 colonne, con destinazione e costo. $O(n)$ propagato a $|N(x)|$ nodi.
+
+Messaggi per iterazione: $n \sum_x |N(x)|$ = $n \cdot 2m$\\
+Messaggi totali: $\text{Messages}(\text{BellmanFordDistributed}(G)) = (n-1) \cdot n \cdot 2m \in O(m n^2)$
+
+Idea: possiamo evitare di costruire una vista globale per ogni entità? sì, possiamo adottare un approccio distribuito.
+
+Prima però ragioniamo sull'aggiornamento delle tabelle di routing in caso di aggiornamento dei nodi. Come gestire i cambiamenti della topologia della rete?
+
+Map update: un cambiamento nella rete rende le mappe locali inaccurate.\\
+Distance vector update: un cambiamento nella rete potrebbe portare all'aggiornamento di uno o tutti (nel caso limite in cui cambia un link
+da cui passa tutto il traffico della rete) i distance vector.
+
+Quando una entità identifica un cambiamento locale possiamo:
+\begin{itemize}
+ \item ricalcolare tutte le routing tables (dispendioso)
+ \item aggiornare le tabelle di routing correnti. Ogni entità inizia una nuova iterazione (\textit{update} message) del protocollo usando il nuovo dato, finchè la tabelle convergono
+\end{itemize}
+
+Quando un'entità riceve un \textit{update}: aggiorna la sua routing table, propaga l'aggiornamento.
+La rete potrebbe non essere ancora arrivata a convergenza prima del prossimo aggiornamento della rete.
+
+Mantenere le routing table costantemente aggiornate con il shortest path aggiunge overhead alla rete. Nel mondo reale si preferisce
+\textbf{rilassare} il vincolo di shortest path, lasciando solo quello di \textbf{delivery}.
+
+\subsection{Min-Hop Routing}
+Assuzione: tutti i link hanno lo stesso costo, non memorizziamo i costi, li assumiamo \textbf{unitari}.
+
+Il Breadth First Spanning Tree (BFST) è lo Shortest Path Spanning Tree (SPST) in questo caso. BFST può essere calcolato con SHOUT nel caso sincrono.
+Nel caso asincorno non abbiamo questa garanzia: potremmo avere link molto più veloci di altri, nel caso estremo una catena di link che
+portano prima in profondità che in larghezza.
+
+Come facciamo su sistemi \underline{asincroni}?
+
+\obsbox{
+  Un nodo al \textbf{livello} $i$ avrà vicini solamente alla distanza $i$ (fratelli), $i-1$ (almeno uno, il padre), e $i+1$ (figli).
+  Nei sistemi asincroni dobbiamo inglobare i nodi per livelli, dove ogni livello è determinato dalla distanza dalla radice.
+  È impossibile che un nodo al livello $i$ abbia vicini al livello $i-2$, altrimenti il nodo in questione sarebbe al livello $i-1$.
+  Per determinare i nodi alla distanza $i+1$ sono necessari solamente i vicini dei nodi alla distanza $i$.
+}
+
+Possiamo iniziare a costrurie il prossimo livello solamente quando quello corrente è stato completato per intero.
+I vicini dei nodi del livello corrente potrebbero essere già nell'albero se appartengono al livello precedente o sono nodi fratelli.
+
+L'orchestratore e inziatore di questo processo sarà la \textbf{radice}.
+Stiamo relalizzando la versione distribuita del \textbf{BFST}. Costruiamo iterativamente lo ST.
+Per comunicare tra i nodi sfruttiamo l'albero già costruito.
+
+Alla generatica iterazione $i$ il \textbf{partial tree} contiene i nodi fino al livello $i-1$; vogliamo inglobare i nodi del livello $i$.
+Abbiamo 3 stadi:
+\begin{enumerate}
+  \item la radice propaga un messaggio di ``inizio dell'iterazione i'' al partial tree.
+  \item i nodi del livello $i-1$ (conoscono a quale livello si trovano, dato che corrisponde all'iterazione a cui sono stati inclusi nel partial tree)
+  avviano la procedura \textit{Exploring}; i nodi a livelli $< i-1$ si limitano a propagare il messaggio ai figli nel partial tree.\\
+  Finito \textit{Exploring} i nodi del livello $i-1$ avvisano il padre con \textit{iteration i ended}.
+  \item i nodi dei livelli $< i-1$ attendono la terminazione di tutti i figli e propagano \textit{iteration i ended} al padre.
+  Se tutti i figli della radice finiscono, si inizia con l'iterazione successiva.
+\end{enumerate}
+
+\textit{Exploring}:
+\begin{itemize}
+  \item ogni entità x alla distanza $i-1$:
+  \begin{enumerate}
+    \item invia ``explore i'' ai ai vicini diretti, escluso il genitore del nodo nell'albero
+    \item aspetta un ack da ogni nodo vicino contattato. Se riceve:
+    \begin{itemize}
+      \item ack-OK il vicino diventa un figlio
+      \item ack-KO il vicino è già nell'albero (lv $i-2$, lv $i-1$, o lv $i$ ma già contattato ad un altro nodo)
+      \item explore-i il vicino è già nell'albero, al livello $i-1$. Vedrà anch'esso il nostro explore-i.
+    \end{itemize}
+  \end{enumerate}
+  \item entità y non appartenente all'albero, alla ricezione di ``explore i'':
+  \begin{itemize}
+    \item la prima volta invia ack-OK e segna il nodo da cui ha ricevuto explore i come parent. y si trova a distanza $i$.
+    \item dalla volta dopo in poi invia ack-KO
+  \end{itemize}
+\end{itemize}
+    
+Come terminare la procedura?\\
+La radice si deve accorgere che abbiamo incluso tutti i nodi e inviare una notifica di terminazione.
+Un'idea funzionante ma dispendiosa è fare al più $N-1$ iterazioni (caso peggiore, nodi in catena), conoscendo $N$ numero di nodi.
+
+Un'alternative più ottimizzata consiste nello sfruttare la fase di terminazione.
+La fase di invio dei messaggi di terminazione è un \textbf{convergecast}. Il \textbf{convergecast} può essere esteso aggiungendo l'informazione
+di assenza di ulteriori nodi su cui espandere l'albero.
+Un nodo del livello corrente sa di essere una foglia se riceve solo ack-KO dai vicini, quindi propaga al genitore un valore speciale.
+Un generico nodo, propaga il valore speciale verso la radice solamente se ha ricevuto solo valori speciali dai figli, a.k.a i suo i figli sono
+tutte foglie.
+
+Message complexity.\\
+Il raggio di una sorgente è la distanza massima delle foglie dell'albero BFST dalla radice, ovvero $r(s) = \text{altezza di BFST radicato in s}$.\\
+Alla generica iterazione $i$:
+\begin{enumerate}
+ \item \textbf{Broadcast} al partial tree fino al livello $i-1$:
+ risulta che $n_i - 1$ (conto il numero di link dell'albero parziale). Con $n_k$ nodi dell'albero parziale all'inizio dell'iterazione $k$.
+ \item \textbf{Explore}. Ogni nodo manda esattamente 1 explore; non è possibile lo mandi più di una volta perchè vorrebbe dire che è stato considerato due volte per
+ lo stesso livello. Su ogni link su cui è stato mandato un explore tornerà indietro un ack-OK, un ack-KO o un altro explore-i.
+ \item \textbf{Convergecast} per propagare ``iterazione i finita''. Stesso numero di (1) dato che i messaggi devono tornare indietro per gli stessi link.
+\end{enumerate}
+
+Sommando (1) e (3):
+$$
+\sum_{i=1}^{r(s)} 2 (n_i - 2) \leq \sum_{i=1}^{r(s)} 2 (n - 2) = 2 (n - 2) \sum_{i=1}^{r(s)} 1 = 2 (n - 2) r(s) \leq 2 (n-2) D(G)
+$$
+
+Per (2): ogni link vede esattamente 2 messaggi, totalizzando $2m$ messaggi.
+
+Totale:
+$$
+\text{Messages}(\text{MinHopRouting}(G_\text{async})) = 2(n-1)D(G) + 2m \leq 2(n-1)(n-1)+2m \in O(n^2)
+$$
+
+Si può migliorare in termini di messaggi?\\
+Sì, posso evitare di mandare il messaggio di explore ai nodi del livello prima;
+in questo modo il NO-ACK viene usato per segnalare che il nodo è già stato collegato ad il nodo padre.
+
+Miglioramento? Ogni arco viene coinvolto una sola volta nella procedura explore-risposta.
+Solo due messaggi per arco nella fase di explore: 2m.
+
+Time complexity.\\
+Alla generica iterazione $i$:
+\begin{enumerate}
+  \item \textbf{broadcast} nell'albero parziale, fino alla distanza $i-1$: catena di $i-1$ messaggi
+  \item \textbf{explore}: catena lunga 2 messaggi
+  \item \textbf{convergecast}: di nuovo una catena di $i-1$ messaggi
+\end{enumerate}
+
+Sommando tra due iterazioni:
+$$
+\text{Time}(\text{MinHopRouting}(G_\text{async})) = \sum_{i=1}^{r(s)} 2(i-1) + 2 = \sum_{i=1}^{r(s)} 2i =
+2 \sum_{i=1}^{r(s)} i = \frac{r(s) \cdot [r(s)+1]}{2} \in O(r(s)^2) \in O(n^2)
+$$
+
+dato che il diametro peggiore è n, ovvero una catena.
+
+\subsection{Shortest Path Spanning Tree}
+Reintroduciamo ora i pesi degli archi.
+Restrizione aggiuntiva: peso degli archi \textbf{positivo}.
+
+Realizziamo la versione distribuita di \underline{Dijkstra}. Ricorda che è un algoritmo greedy, che fa uso di una coda di priorità.
+La soluzione geedy viene tradotta con una soluzione distribuita che lavora per diverse iterazioni; come prima, la sorgente agisce da coordinatore.
+Alla generica iterazione $i$ abbiamo una parte di albero dei cammini minimi formato e una parte dell'albero originale ancora da esplorare.
+
+% TODO diagram.
+
+Definiamo \textit{outgoing edge} (outgoing dalla propsettiva dello SPST) come un arco che collega il SPST parziale verso un nodo non ancora considerato;
+si trova quindi alla frontiera dello SPST. Ad ogni iterazione, aggiungiamo un outgoing edge e il nodo su cui incide allo SPST.
+
+Inizializzazione:
+\begin{itemize}
+ \item tutti gli archi sono impostati ad outgoing
+ \item tutte le entità conoscono il costo degli archi incidenti
+ \item solo la sorgente si trova nell'albero, tutte le altre entità sono fuori
+ \item la sorgente notifca di essere all'interno dell'albero e attende un ack
+ \item i vicini della sorgente impostano l'arco che li connette ad essa come non outgoing (dalla loro propsettiva; per la sorgente resta outgoing).
+\end{itemize}
+
+Posta $\Delta(x)$ minima distanza dalla sorgente $s$ al generico nodo $x$. Posto $c(x, y)$ costo dell'arco $(x, y)$.
+
+Generic iteration:
+\begin{itemize}
+ \item La radice propaga \textit{start iteration} nello SPST parziale. Costo $O(n)$ messaggi.
+ \item Una entità generica $x$ nel SPST parziale, alla ricezione di \textit{start iteration}:
+ \begin{itemize}
+    \item calcola la somma tra il costo per arrivare a $x$ e il costo di aggiunta di ogni nodo: $\Delta(x) + c(x, y) \quad \forall (x, y) \in \text{outgoing edges}$
+    \item seleziona l'arco $(x, y_x)$ che minimizza tale costo (trovando il minimo locale)
+ \end{itemize}
+ \item L'infromazione di costo e arco aggiunto fluisce verso la radice mediante convergecast. Ogni nodo contribuisce al calcolo di $\hat x = \arg \min_x \Delta(x) + c(x, y_x)$.
+ A.k.a., propaga verso l'alto solo il messaggio con costo minore tra quelli ricevuti dai figli. Costo $O(n)$ siccome il messaggio deve essere propagato sull'intero
+ SPST ($n-1$ nodi nel caso peggiore).
+ \item La radice aggiunge $\hat x$ e $(\hat x, y_x)$ allo SPST.
+ \item La radice usando lo SPST notifica $y_{\hat x}$ della sua inclusione. $O(n)$ messaggi. Durante questa fase, $\hat x$ invia a $y_{\hat x}$ il valore
+ $\Delta(y_{\hat x})$, ovvero il costo per raggiungere $y_{\hat x}$ dalla sorgente; l'arco $\hat x, y_{\hat x}$ viene marcato come appartenente a SPST.
+ \item $y_{\hat x}$ notifica i vicini della sua inclusione e attente un ack. $O(\text{deg}(y_{\hat x}))$ messaggi.
+ \item I vicini impostano l'arco verso $y_{\hat x}$ come non-outgoing e inviano un ack. $O(\text{deg}(y_{\hat x}))$ messaggi.
+ \item Non appena $y_{\hat x}$ riceve tutti gli ack invia \textit{end iteration} alla radice. $O(n)$ messaggi.
+\end{itemize}
+
+Terminazione: per costruzione, la radice invia una notifica. Come?\\
+La radice conosce $n$ e sa che, effettuando$n-1$ iterazioni tutti i nodi verranno considarati; vengono potenzialmente fatte più iterazioni del necessario.
+Un'alternativa più efficiente consiste nel far inviare un valore speciale (e.g., negativo) ai nodi senza archi outgoing, durante il convergecast (valori chiaramente
+esclusi dal calcolo del nodo di costo minimo); quando riceve solo valori speciali, sa che sono stati esauriti gli archi inesplorati.
+
+Ricorda: ogni iterazione un solo nodo è aggiunto al SPST quindi, nel caso peggiore, serviranno $n$ iterazioni.
+
+Message Complexity: $O(n)$ per una iterazione, ripetuto per $n$ iterazioni
+$$
+\text{Messages}(\text{DistributedDijkstra}(G)) \in O(n^2)
+$$
+
+Time Complexity:
+\begin{enumerate}
+  \item init: catena di 2
+  \item in ogni iterazione, solo l'invio di notifiche e ack è fatto in parallelo: \textit{start iteration}, risposta convergecast, notifica a $y_{\hat x}$, \textit{end iteration}.
+  Totale di $\leq 4i$ messaggi in catena, ripetuti per $n-1$ iterazioni: $\leq 4 \sum_{i=1}^{n-1} i = 4 \frac{(n-1)n}{2} = 2(n-1)n$ messaggi.
+  \item notifica di terminazione: catena di $\leq n-1$ messaggi
+\end{enumerate}
+
+Totale:
+$$
+\text{Time}(\text{DistributedDijkstra}(G)) = 2 + 2(n-1)n + (n-1) \in O(n^2)
+$$
+
+Distributed \underline{all} shortest path spanning trees: SPST costruito per ogni nodo. Costruire n SPST costa $O(n^3)$ messaggi.
+
+Come si relazione con Gossip e Iterating (Distributed Bellman-Ford)? $O(mn) \in O(n^3)$ in Gossip e $O(mn^2) \in O(n^4)$ in Iterating.
+Gossip gestisce meglio il ricalcolo delle tabelle di routing.
